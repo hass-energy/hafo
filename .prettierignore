@@ -1,0 +1,18 @@
+# Ignore artifacts and generated files
+.venv
+__pycache__
+*.egg-info
+build
+dist
+node_modules
+site
+coverage.xml
+coverage.json
+.coverage
+.pytest_cache
+.ruff_cache
+.mypy_cache
+
+# Ignore lock files
+uv.lock
+package-lock.json

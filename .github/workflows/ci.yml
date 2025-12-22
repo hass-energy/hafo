@@ -1,0 +1,151 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  merge_group:
+    types: [checks_requested]
+
+permissions:
+  contents: read
+  pull-requests: write
+  checks: write
+
+jobs:
+  linting-and-formatting:
+    name: "Linting and Formatting"
+    runs-on: "ubuntu-latest"
+    env:
+      REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          fetch-depth: 0
+
+      # Install job dependencies
+      - uses: astral-sh/setup-uv@681c641aba71e4a1c380be3ab5e12ad51f415867 # v7.1.6
+      - uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6.1.0
+      - uses: reviewdog/action-setup@d8a7baabd7f3e8544ee4dbde3ee41d0011c3a93f # v1.5.0
+        with:
+          reviewdog_version: v0.20.3
+
+      - name: Install python dependencies
+        run: uv sync --locked --all-extras --dev
+
+      - name: Format
+        if: ${{ !cancelled() }}
+        run: |
+          uv run ruff format --diff \
+            | reviewdog -f=diff -name="ruff format" -reporter=github-pr-review -filter-mode=nofilter -fail-level=any
+
+      - name: Lint
+        if: ${{ !cancelled() }}
+        run: |
+          uv run ruff check --output-format rdjson \
+            | reviewdog -f=rdjson -name="ruff lint" -reporter=github-pr-review -filter-mode=nofilter -fail-level=any
+
+      - name: Type Check
+        if: ${{ !cancelled() }}
+        run: |
+          uv run pyright \
+            | reviewdog -efm="%f:%l:%c - %t%*[^:]: %m" -name="pyright type check" -reporter=github-pr-review -filter-mode=nofilter -fail-level=any
+
+      - name: Prettier
+        if: ${{ !cancelled() }}
+        run: |
+          git clean -d -f -x
+          npm ci
+          npx --yes prettier@3 --write .
+          git diff \
+            | reviewdog -f=diff -name="prettier" -reporter=github-pr-review -filter-mode=nofilter -fail-level=any
+
+      - name: Markdown Format
+        if: ${{ !cancelled() }}
+        run: |
+          git clean -d -f -x
+          uv run mdformat $(git ls-files '*.md' '*.mdx')
+          git diff \
+            | reviewdog -f=diff -name="mdformat" -reporter=github-pr-review -filter-mode=nofilter -fail-level=any
+
+  test:
+    name: "Run Tests"
+    runs-on: "ubuntu-latest"
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          fetch-depth: 0
+
+      # Install job dependencies
+      - name: Install uv
+        uses: astral-sh/setup-uv@681c641aba71e4a1c380be3ab5e12ad51f415867 # v7.1.6
+
+      - name: Install the project
+        run: uv sync --locked --all-extras --dev
+
+      - name: Run Tests
+        run: uv run pytest --cov=custom_components/hafo --cov-branch --cov-report=xml --junitxml=junit.xml -o junit_family=legacy
+
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de # v5.5.2
+        with:
+          report_type: test_results
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Upload coverage to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de # v5.5.2
+        with:
+          fail_ci_if_error: true
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+  hassfest: # https://developers.home-assistant.io/blog/2020/04/16/hassfest
+    name: Hassfest validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+
+      - name: Run hassfest validation
+        uses: home-assistant/actions/hassfest@87c064c607f3c5cc673a24258d0c98d23033bfc3 # master
+
+  version-check:
+    name: Version consistency check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@681c641aba71e4a1c380be3ab5e12ad51f415867 # v7.1.6
+
+      - name: Check HAFO version consistency
+        run: |
+          PYPROJECT=$(uv run python -c "import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))['project']['version'])")
+          MANIFEST=$(jq -r '.version' custom_components/hafo/manifest.json)
+          echo "pyproject.toml=$PYPROJECT manifest.json=$MANIFEST"
+          [[ "$PYPROJECT" == "$MANIFEST" ]]
+
+      - name: Check Home Assistant version consistency
+        run: |
+          PYPROJECT=$(uv run python -c "import tomllib, re; deps=tomllib.load(open('pyproject.toml', 'rb'))['project']['dependencies']; print(re.search(r'homeassistant>=(\d+\.\d+\.\d+)', str(deps)).group(1))")
+          HACS=$(jq -r '.homeassistant' hacs.json)
+          echo "pyproject.toml=$PYPROJECT hacs.json=$HACS"
+          [[ "$PYPROJECT" == "$HACS" ]]
+
+  hacs: # https://github.com/hacs/action
+    name: HACS validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run HACS validation
+        uses: hacs/action@d556e736723344f83838d08488c983a15381059a # 22.5.0
+        with:
+          category: integration
+          # Remove this 'ignore' key when you have added brand images for your integration to https://github.com/home-assistant/brands
+          ignore: brands

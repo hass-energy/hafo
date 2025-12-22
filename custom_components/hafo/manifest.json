@@ -1,0 +1,14 @@
+{
+  "domain": "hafo",
+  "name": "Home Assistant Forecaster",
+  "after_dependencies": ["recorder"],
+  "codeowners": ["@TrentHouliston"],
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://github.com/hass-energy/hafo",
+  "integration_type": "helper",
+  "iot_class": "calculated",
+  "issue_tracker": "https://github.com/hass-energy/hafo/issues",
+  "requirements": [],
+  "version": "0.1.0"
+}

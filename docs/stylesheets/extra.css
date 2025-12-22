@@ -1,0 +1,13 @@
+/* Additional styles for HAFO documentation */
+
+/* Improve code block readability */
+.md-typeset code {
+  background-color: var(--md-code-bg-color);
+  padding: 0.1em 0.3em;
+  border-radius: 0.2em;
+}
+
+/* Improve table readability */
+.md-typeset table:not([class]) th {
+  background-color: var(--md-default-fg-color--lightest);
+}
