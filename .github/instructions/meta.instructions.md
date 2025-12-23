@@ -33,14 +33,14 @@ This allows Cursor rules to be symlinks to the Copilot instruction files.
 
 Each Cursor rule directory contains a `RULE.md` symlink pointing to the corresponding Copilot instruction:
 
-| Cursor Rule           | Symlink Target                                              |
-| --------------------- | ----------------------------------------------------------- |
-| `hafo/RULE.md`        | `../../../.github/copilot-instructions.md`                  |
-| `python/RULE.md`      | `../../../.github/instructions/python.instructions.md`      |
-| `tests/RULE.md`       | `../../../.github/instructions/tests.instructions.md`       |
-| `integration/RULE.md` | `../../../.github/instructions/integration.instructions.md` |
+| Cursor Rule           | Symlink Target                                                |
+| --------------------- | ------------------------------------------------------------- |
+| `hafo/RULE.md`        | `../../../.github/copilot-instructions.md`                    |
+| `python/RULE.md`      | `../../../.github/instructions/python.instructions.md`        |
+| `tests/RULE.md`       | `../../../.github/instructions/tests.instructions.md`         |
+| `integration/RULE.md` | `../../../.github/instructions/integration.instructions.md`   |
 | `docs/RULE.md`        | `../../../.github/instructions/documentation.instructions.md` |
-| `meta/RULE.md`        | `../../../.github/instructions/meta.instructions.md`        |
+| `meta/RULE.md`        | `../../../.github/instructions/meta.instructions.md`          |
 
 ## Keeping systems in sync
 
@@ -77,9 +77,11 @@ Enumeration creates brittle rules that become outdated when the codebase changes
 
 ```markdown
 <!-- ❌ Bad: Enumeration -->
+
 Each forecaster (HistoricalShift, MovingAverage, Regression) must have...
 
 <!-- ✅ Good: Pattern description -->
+
 Each forecaster type registered in FORECASTER_TYPES must have...
 ```
 
@@ -107,12 +109,12 @@ Rules contain directives; docs contain explanations.
 
 ## What makes a good rule
 
-| ✅ Good Rule                                 | ❌ Bad Rule                                         |
-| -------------------------------------------- | --------------------------------------------------- |
-| "Use `str \| None` not `Optional[str]`"      | "Python has several ways to express optional types" |
-| "Keep try blocks minimal"                    | "Error handling is important"                       |
-| "Use `asyncio.gather()` for multiple awaits" | "Async programming has many benefits"               |
-| "Forecasters are registered in FORECASTER_TYPES" | "HistoricalShift is a forecaster"               |
+| ✅ Good Rule                                     | ❌ Bad Rule                                         |
+| ------------------------------------------------ | --------------------------------------------------- |
+| "Use `str \| None` not `Optional[str]`"          | "Python has several ways to express optional types" |
+| "Keep try blocks minimal"                        | "Error handling is important"                       |
+| "Use `asyncio.gather()` for multiple awaits"     | "Async programming has many benefits"               |
+| "Forecasters are registered in FORECASTER_TYPES" | "HistoricalShift is a forecaster"                   |
 
 ## When to update rules vs documentation
 

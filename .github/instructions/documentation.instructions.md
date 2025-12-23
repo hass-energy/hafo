@@ -60,13 +60,13 @@ All user-facing pages must end with a **Next Steps** section using Material grid
 
 <div class="grid cards" markdown>
 
--   :material-chart-line:{ .lg .middle } **Configure forecasters**
+- :material-chart-line:{ .lg .middle } **Configure forecasters**
 
-    ---
+  ***
 
-    Set up forecasting engines for your sensors.
+  Set up forecasting engines for your sensors.
 
-    [:material-arrow-right: Forecaster setup](forecasters/index.md)
+  [:material-arrow-right: Forecaster setup](forecasters/index.md)
 
 </div>
 ```

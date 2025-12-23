@@ -62,7 +62,7 @@ Best for data with repeating patterns (daily, weekly cycles).
 - Shifts data forward by configurable number of days
 - Cycles patterns to fill any forecast horizon
 
-*More forecasting engines coming soon!*
+_More forecasting engines coming soon!_
 
 ## 🎯 How It Works
 
@@ -119,7 +119,7 @@ HAFO creates forecast helper sensors that:
 The sensor provides forecast data in HAEO-compatible format:
 
 ```yaml
-state: 2.5  # Current/nearest forecast value
+state: 2.5 # Current/nearest forecast value
 attributes:
   source_entity: sensor.home_power
   history_days: 7
