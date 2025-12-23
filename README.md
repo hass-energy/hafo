@@ -89,7 +89,7 @@ Use HAFO to generate load forecasts, then configure HAEO to use those forecasts 
 2. Configure HAEO to use the HAFO sensor as its load forecast source
 3. HAEO will use the forecast to optimize battery charging, grid import/export, and more
 
-See the [HAEO documentation](https://hass-energy.github.io/haeo/) for details on energy optimization.
+See the [HAEO documentation](https://haeo.io/) for details on energy optimization.
 
 ## 📦 Installation
 

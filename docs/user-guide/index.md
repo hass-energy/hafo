@@ -13,10 +13,10 @@ This guide covers everything you need to know to use HAFO effectively.
 
 ## Integration with HAEO
 
-HAFO is designed to work with [HAEO (Home Assistant Energy Optimizer)](https://hass-energy.github.io/haeo/).
+HAFO is designed to work with [HAEO (Home Assistant Energy Optimizer)](https://haeo.io/).
 Use HAFO to generate forecasts, then configure HAEO to consume them for optimal energy management.
 
-See the [HAEO documentation](https://hass-energy.github.io/haeo/user-guide/configuration/) for details.
+See the [HAEO documentation](https://haeo.io/user-guide/configuration/) for details.
 
 ## Reference
 

@@ -21,15 +21,15 @@ It transforms historical data from the recorder into future predictions, making 
 ## Use Cases
 
 - **Load Forecasting**: Predict home power consumption from historical patterns
-- **Integration with [HAEO](https://hass-energy.github.io/haeo/)**: Provide load forecasts for energy optimization
+- **Integration with [HAEO](https://haeo.io/)**: Provide load forecasts for energy optimization
 - **Temperature Patterns**: Forecast indoor temperatures based on past data
 - **Usage Prediction**: Estimate resource usage from history
 
 ### Using with HAEO
 
-HAFO is designed to work seamlessly with [HAEO (Home Assistant Energy Optimizer)](https://hass-energy.github.io/haeo/).
+HAFO is designed to work seamlessly with [HAEO (Home Assistant Energy Optimizer)](https://haeo.io/).
 Create HAFO forecast helpers and configure HAEO to use them for optimal energy management.
-See the [HAEO documentation](https://hass-energy.github.io/haeo/user-guide/configuration/) for integration details.
+See the [HAEO documentation](https://haeo.io/user-guide/configuration/) for integration details.
 
 ## Navigation
 
