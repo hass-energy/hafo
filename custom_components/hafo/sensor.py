@@ -78,7 +78,7 @@ class HafoForecastSensor(CoordinatorEntity[HafoDataUpdateCoordinator], SensorEnt
         min_diff = None
 
         for point in result.forecast:
-            diff = abs((point.datetime - now).total_seconds())
+            diff = abs((point.time - now).total_seconds())
             if min_diff is None or diff < min_diff:
                 min_diff = diff
                 closest_point = point
@@ -104,13 +104,13 @@ class HafoForecastSensor(CoordinatorEntity[HafoDataUpdateCoordinator], SensorEnt
     def _format_forecast(self, result: ForecastResult) -> list[dict[str, Any]]:
         """Format the forecast for the state attribute.
 
-        Returns forecast in Home Assistant's standard forecast format:
-        [{"datetime": "ISO8601", "native_value": float}, ...]
+        Returns forecast in HAEO-compatible format:
+        [{"time": "ISO8601", "value": float}, ...]
         """
         return [
             {
-                "datetime": point.datetime.isoformat(),
-                "native_value": point.value,
+                "time": point.time.isoformat(),
+                "value": point.value,
             }
             for point in result.forecast
         ]

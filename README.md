@@ -6,8 +6,8 @@
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Default-41BDF5.svg)](https://github.com/hacs/integration) [![GitHub Release](https://img.shields.io/github/release/hass-energy/hafo.svg)](https://github.com/hass-energy/hafo/releases) [![License](https://img.shields.io/github/license/hass-energy/hafo.svg)](LICENSE) [![Documentation](https://img.shields.io/badge/docs-latest-blue.svg)](https://hass-energy.github.io/hafo/)
 
-HAFO (Home Assistant Forecaster) is a custom integration that creates forecast helper sensors from entity history.
-It transforms historical data from the Home Assistant recorder into future predictions, making it easy to forecast values for sensors that don't have native forecast support.
+HAFO (Home Assistant Forecaster) is a custom integration that creates forecast helper sensors using various forecasting engines.
+It transforms data from different sources into future predictions, making it easy to forecast values for sensors that don't have native forecast support.
 
 ## 🎯 Project Philosophy
 
@@ -15,9 +15,9 @@ HAFO follows the Unix philosophy: **do one thing and do it well**.
 
 ### What HAFO Does
 
-- ✅ **Forecast generation** from historical statistics
+- ✅ **Forecast generation** from multiple forecasting engines
 - ✅ **Helper sensor creation** with forecast attributes
-- ✅ **Integration** with Home Assistant's recorder and statistics
+- ✅ **Integration** with Home Assistant's sensor ecosystem
 
 ### What HAFO Doesn't Do
 
@@ -27,30 +27,50 @@ HAFO focuses exclusively on forecasting and **will not** add features outside th
 - ❌ **Device control** - Use Home Assistant automations
 - ❌ **External API integrations** - Use dedicated integrations for external forecast services
 
+This focused approach means:
+
+- Better integration with the HA ecosystem
+- Simpler, more maintainable codebase
+- Users can choose best-in-class solutions for each component
+- HAFO does forecasting exceptionally well
+
 ## 📚 Documentation
 
 **[Read the full documentation →](https://hass-energy.github.io/hafo/)**
 
 - **[Installation Guide](https://hass-energy.github.io/hafo/user-guide/installation/)** - Get started with HAFO
 - **[Configuration Guide](https://hass-energy.github.io/hafo/user-guide/configuration/)** - Set up your forecasters
-- **[Historical Shift](https://hass-energy.github.io/hafo/user-guide/forecasters/historical-shift/)** - Understand the main forecasting algorithm
+- **[Forecasters](https://hass-energy.github.io/hafo/user-guide/forecasters/)** - Available forecasting engines
 - **[Developer Guide](https://hass-energy.github.io/hafo/developer-guide/)** - Contribute to HAFO
 
 ## ✨ Features
 
-- **Historical Shift Forecasting**: Projects past patterns into the future
-- **Automatic Cycling**: Repeats patterns to fill any forecast horizon
+- **Multiple Forecasting Engines**: Choose the best algorithm for your data
 - **Helper-based Design**: Easy to add and configure via the UI
-- **Recorder Integration**: Uses Home Assistant's built-in statistics
-- **Forecast Attributes**: Provides standard forecast data format
+- **HAEO Compatible**: Output format matches HAEO for seamless integration
+- **Recorder Integration**: Leverage Home Assistant's built-in statistics
+- **Extensible Architecture**: Add new forecasting engines easily
+
+## 🔮 Forecasting Engines
+
+### Historical Shift
+
+Projects past patterns into the future by shifting historical data forward.
+Best for data with repeating patterns (daily, weekly cycles).
+
+- Fetches hourly statistics from the recorder
+- Shifts data forward by configurable number of days
+- Cycles patterns to fill any forecast horizon
+
+*More forecasting engines coming soon!*
 
 ## 🎯 How It Works
 
 HAFO creates forecast helper sensors that:
 
-1. **Fetch History**: Retrieves hourly statistics from the Home Assistant recorder
-2. **Shift Forward**: Projects historical data forward by N days
-3. **Cycle Patterns**: Repeats the pattern to fill your desired forecast horizon
+1. **Load Data**: Retrieves data from the configured source
+2. **Apply Forecaster**: Runs the selected forecasting engine
+3. **Generate Output**: Creates forecast points in HAEO-compatible format
 4. **Update Regularly**: Refreshes the forecast hourly
 
 ### Example Use Cases
@@ -91,24 +111,12 @@ HAFO creates forecast helper sensors that:
 3. Search for **HAFO**
 4. Configure your forecast helper:
    - **Source Entity**: The sensor to generate a forecast for
-   - **History Days**: Number of days of history to use (default: 7)
-   - **Forecast Type**: The forecasting algorithm (Historical Shift)
-
-### Understanding History Days
-
-The `history_days` parameter controls how the forecast is generated:
-
-| History Days | Best For                                          |
-| ------------ | ------------------------------------------------- |
-| 1-3          | Highly variable data, recent patterns only        |
-| 7 (default)  | Weekly patterns (weekday vs weekend differences)  |
-| 14-30        | Longer-term averaging, smoothing out anomalies    |
-
-**Example**: With `history_days: 7`, consumption from last Monday 2pm becomes the forecast for next Monday 2pm.
+   - **History Days**: Number of days of history to use (for historical forecasters)
+   - **Forecast Type**: The forecasting engine to use
 
 ## 📊 Forecast Data Format
 
-The sensor provides forecast data in the standard Home Assistant format:
+The sensor provides forecast data in HAEO-compatible format:
 
 ```yaml
 state: 2.5  # Current/nearest forecast value
@@ -117,10 +125,10 @@ attributes:
   history_days: 7
   last_forecast_update: "2025-01-15T10:00:00+00:00"
   forecast:
-    - datetime: "2025-01-15T10:00:00+00:00"
-      native_value: 2.5
-    - datetime: "2025-01-15T11:00:00+00:00"
-      native_value: 3.1
+    - time: "2025-01-15T10:00:00+00:00"
+      value: 2.5
+    - time: "2025-01-15T11:00:00+00:00"
+      value: 3.1
     # ... more forecast points
 ```
 

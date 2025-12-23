@@ -1,4 +1,3 @@
-```instructions
 ---
 description: HAFO project context and agent behavioral rules - always applied
 alwaysApply: true
@@ -6,29 +5,31 @@ alwaysApply: true
 
 # GitHub Copilot Instructions
 
-This repository contains **HAFO** (Home Assistant Forecaster) - a Python 3.13+ Home Assistant custom component for creating forecast helpers from entity history.
+This repository contains **HAFO** (Home Assistant Forecaster) - a Python 3.13+ Home Assistant custom component for creating forecast helper sensors from various forecasting engines.
 
 ## Project overview
 
-HAFO creates forecast sensor helpers that transform historical entity data into future predictions.
-The integration works with Home Assistant's recorder/statistics to shift historical patterns forward in time.
+HAFO creates forecast helper sensors by transforming historical data and other sources into future predictions.
+It supports multiple forecasting engines that can be selected when creating a forecast helper.
 
 ### Core components
 
-The integration follows a simple architecture:
+The integration follows a simple helper architecture:
 
-- **Forecasters** (`forecasters/`): Core forecasting logic (historical shift, etc.)
-- **Coordinator** (`coordinator.py`): Orchestrates data loading and forecast updates
-- **Sensors** (`sensor.py`): Expose forecast data to Home Assistant
-- **Config flows** (`config_flow.py`): Helper-based configuration
+- **Forecasters layer** (`forecasters/`): Forecasting engines (historical shift, etc.)
+- **Coordinator** (`coordinator.py`): Orchestrates data loading and forecast generation
+- **Sensors** (`sensor.py`): Expose forecast results to Home Assistant
+- **Config flow** (`config_flow.py`): Helper-based configuration for forecast creation
 
 ### Project structure
 
 ```
 custom_components/hafo/     # Home Assistant integration
-├── forecasters/            # Forecasting algorithms
+├── forecasters/            # Forecasting engines
 ├── translations/           # i18n strings (en.json)
+└── *.py                    # Core integration files
 tests/                      # Test suite
+├── forecasters/            # Forecaster unit tests
 docs/                       # Documentation
 ```
 
@@ -70,19 +71,28 @@ Having None checks there reduces readability and makes the test more fragile to 
 
 - **Python**: 3.13+ with modern features (pattern matching, `str | None` syntax, f-strings, dataclasses)
 - **Type hints**: Required on all functions, methods, and variables
+- **Typing philosophy**: Type at boundaries, use TypedDict/TypeGuard for narrowing, prefer types over runtime checks
 - **Formatting**: Ruff (Python), Prettier (JSON), mdformat (Markdown)
 - **Linting**: Ruff
 - **Type checking**: Pyright
 - **Language**: American English for all code, comments, and documentation
 - **Testing**: pytest with coverage enforced by codecov on changed lines
 
-### Units
+### Forecast format
 
-HAFO uses Home Assistant conventions:
+HAFO uses a consistent forecast format matching HAEO for interoperability:
 
-- Time: seconds (timestamps)
-- Power: watts (W) or kilowatts (kW) depending on source entity
-- Energy: watt-hours (Wh) or kilowatt-hours (kWh) depending on source entity
+```python
+class ForecastPoint(TypedDict):
+    time: datetime  # Timestamp as timezone-aware datetime
+    value: float    # Forecast value
+```
+
+Forecasts are exposed as sensor attributes in JSON format:
+
+```json
+[{"time": "2025-01-15T10:00:00+00:00", "value": 2.5}, ...]
+```
 
 ### Version matching
 
@@ -93,4 +103,17 @@ The version number must be consistent across:
 
 When updating version numbers, update both files together.
 
-```
+## Path-specific instructions
+
+This repository uses path-specific instruction files in `.github/instructions/` that apply additional context based on the files being edited.
+See that directory for domain-specific guidelines.
+
+## Documentation
+
+- [Documentation guidelines](../docs/developer-guide/documentation-guidelines.md) - Writing and maintaining docs
+
+## Self-maintenance
+
+When the user provides feedback about systemic corrections (coding patterns, style issues, architectural decisions, or recurring mistakes), update the appropriate instruction file to capture that feedback for future sessions.
+
+See `.github/instructions/meta.instructions.md` for guidance on maintaining both Copilot instructions and Cursor rules in sync.

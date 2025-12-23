@@ -34,8 +34,8 @@ class TestShiftHistoryToForecast:
 
         # Timestamps should be shifted forward by 7 days
         expected_base = base + timedelta(days=7)
-        assert result[0].datetime == expected_base
-        assert result[1].datetime == expected_base + timedelta(hours=1)
+        assert result[0].time == expected_base
+        assert result[1].time == expected_base + timedelta(hours=1)
 
         # Values should be unchanged
         assert result[0].value == pytest.approx(2.0)
@@ -73,7 +73,7 @@ class TestShiftHistoryToForecast:
         assert len(result) == 1
         expected_time = base + timedelta(days=7)
         # Compare timestamps since timezone handling may differ
-        assert abs(result[0].datetime.timestamp() - expected_time.timestamp()) < 1
+        assert abs(result[0].time.timestamp() - expected_time.timestamp()) < 1
         assert result[0].value == pytest.approx(5.0)
 
     def test_sorts_by_timestamp(self) -> None:
@@ -107,8 +107,8 @@ class TestCycleForecastToHorizon:
         """Doesn't add cycles when forecast already covers horizon."""
         base = datetime(2024, 1, 8, 10, 0, 0, tzinfo=UTC)
         forecast = [
-            ForecastPoint(datetime=base, value=100.0),
-            ForecastPoint(datetime=base + timedelta(hours=1), value=200.0),
+            ForecastPoint(time=base, value=100.0),
+            ForecastPoint(time=base + timedelta(hours=1), value=200.0),
         ]
         # Horizon ends before the last forecast point
         horizon_end = base + timedelta(minutes=30)
@@ -125,10 +125,10 @@ class TestCycleForecastToHorizon:
         base = datetime(2024, 1, 8, 0, 0, 0, tzinfo=UTC)
         # 2 days of history data (shifted to future)
         forecast = [
-            ForecastPoint(datetime=base, value=100.0),  # Day 1, 00:00
-            ForecastPoint(datetime=base + timedelta(hours=12), value=200.0),  # Day 1, 12:00
-            ForecastPoint(datetime=base + timedelta(days=1), value=150.0),  # Day 2, 00:00
-            ForecastPoint(datetime=base + timedelta(days=1, hours=12), value=250.0),  # Day 2, 12:00
+            ForecastPoint(time=base, value=100.0),  # Day 1, 00:00
+            ForecastPoint(time=base + timedelta(hours=12), value=200.0),  # Day 1, 12:00
+            ForecastPoint(time=base + timedelta(days=1), value=150.0),  # Day 2, 00:00
+            ForecastPoint(time=base + timedelta(days=1, hours=12), value=250.0),  # Day 2, 12:00
         ]
 
         # Horizon is 6 days (should repeat 3 times)
@@ -151,8 +151,8 @@ class TestCycleForecastToHorizon:
         """Stops cycling when horizon is reached mid-cycle."""
         base = datetime(2024, 1, 8, 0, 0, 0, tzinfo=UTC)
         forecast = [
-            ForecastPoint(datetime=base, value=100.0),
-            ForecastPoint(datetime=base + timedelta(hours=12), value=200.0),
+            ForecastPoint(time=base, value=100.0),
+            ForecastPoint(time=base + timedelta(hours=12), value=200.0),
         ]
 
         # Horizon is 1.5 cycles (18 hours into a 24-hour pattern)

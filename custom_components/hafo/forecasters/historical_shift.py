@@ -27,7 +27,7 @@ StatisticsLike = Mapping[str, Any]
 class ForecastPoint:
     """A single point in a forecast time series."""
 
-    datetime: datetime
+    time: datetime
     value: float
 
 
@@ -137,10 +137,10 @@ def shift_history_to_forecast(
 
         # Shift forward by N days
         future_time = dt_start + shift
-        forecast.append(ForecastPoint(datetime=future_time, value=float(mean)))
+        forecast.append(ForecastPoint(time=future_time, value=float(mean)))
 
-    # Sort by datetime
-    forecast.sort(key=lambda x: x.datetime)
+    # Sort by time
+    forecast.sort(key=lambda x: x.time)
     return forecast
 
 
@@ -167,7 +167,7 @@ def cycle_forecast_to_horizon(
         return forecast
 
     cycle_duration = timedelta(days=history_days)
-    first_time = forecast[0].datetime
+    first_time = forecast[0].time
 
     # Calculate how many cycles we need
     horizon_span = horizon_end - first_time
@@ -181,10 +181,10 @@ def cycle_forecast_to_horizon(
     for cycle in range(1, cycles_needed + 1):
         cycle_shift = cycle_duration * cycle
         for point in forecast:
-            new_time = point.datetime + cycle_shift
+            new_time = point.time + cycle_shift
             if new_time > horizon_end:
                 break
-            extended.append(ForecastPoint(datetime=new_time, value=point.value))
+            extended.append(ForecastPoint(time=new_time, value=point.value))
 
     return extended
 
