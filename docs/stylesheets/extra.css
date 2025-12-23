@@ -1,4 +1,44 @@
-/* Additional styles for HAFO documentation */
+/* Custom styles for HAFO documentation */
+
+/* Reduce margins around math equations */
+.arithmatex {
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+}
+
+/* Reduce margins for display math specifically */
+div.arithmatex {
+  margin-top: 0.75em;
+  margin-bottom: 0.75em;
+}
+
+/* Keep inline math tight */
+span.arithmatex {
+  margin: 0;
+  padding: 0 0.1em;
+}
+
+/* Improve code block styling */
+.highlight {
+  margin: 1em 0;
+}
+
+/* Better table styling */
+table {
+  width: 100%;
+  margin: 1em 0;
+}
+
+/* Improve math rendering */
+.arithmatex {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+/* Better admonition spacing */
+.admonition {
+  margin: 1.5em 0;
+}
 
 /* Improve code block readability */
 .md-typeset code {
