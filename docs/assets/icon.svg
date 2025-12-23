@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <style>
+    :root {
+      --fg:#7fb1ff;
+      --accent:#ffd400;
+      --bg:#0a0f1a;
+    }
+  </style>
+
+  <!-- Background -->
+  <circle cx="64" cy="52" r="49"
+          fill="var(--bg)"
+          stroke="var(--fg)"
+          stroke-width="6"/>
+
+  <!-- Crystal ball -->
+  <circle cx="64" cy="52" r="49"
+          fill="none"
+          stroke="var(--fg)"
+          stroke-width="6"/>
+
+  <!-- Inner glow -->
+  <circle cx="64" cy="52" r="43"
+          fill="none"
+          stroke="var(--fg)"
+          stroke-width="2"
+          opacity="0.35"/>
+
+  <!-- Forecast pulse -->
+  <polyline
+    points="25,55 46,55 54,42 64,73 77,31 90,55 103,55"
+    fill="none"
+    stroke="var(--accent)"
+    stroke-width="4"
+    stroke-linecap="round"
+    stroke-linejoin="round"/>
+
+  <!-- Stand -->
+  <rect x="30" y="100" width="68" height="12" rx="4"
+        fill="var(--accent)"/>
+  <rect x="22" y="114" width="84" height="14" rx="5"
+        fill="var(--accent)"/>
+</svg>

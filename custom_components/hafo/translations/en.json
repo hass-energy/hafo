@@ -1,0 +1,30 @@
+{
+  "config": {
+    "flow_title": "{name}",
+    "step": {
+      "user": {
+        "title": "Create Forecast Helper",
+        "description": "Create a forecast sensor that shifts historical data forward to predict future values.",
+        "data": { "forecast_type": "Forecast type", "history_days": "History days", "source_entity": "Source entity" },
+        "data_description": {
+          "forecast_type": "The forecasting algorithm to use",
+          "history_days": "Number of days of history to fetch and shift forward (1-30)",
+          "source_entity": "The sensor entity to generate a forecast for"
+        }
+      }
+    },
+    "error": { "entity_not_found": "The selected entity was not found" },
+    "abort": { "already_configured": "A forecast helper for this entity already exists" }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Configure Forecast Helper",
+        "description": "Adjust the forecast settings",
+        "data": { "history_days": "History days" },
+        "data_description": { "history_days": "Number of days of history to fetch and shift forward (1-30)" }
+      }
+    }
+  },
+  "entity": { "sensor": { "forecast": { "name": "Forecast" } } }
+}
