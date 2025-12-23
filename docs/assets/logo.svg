@@ -28,7 +28,7 @@
 
   <!-- Forecast pulse -->
   <polyline
-    points="34,54 50,54 56,44 64,68 74,36 84,54 94,54"
+    points="25,55 46,55 54,42 64,73 77,31 90,55 103,55"
     fill="none"
     stroke="var(--accent)"
     stroke-width="4"
