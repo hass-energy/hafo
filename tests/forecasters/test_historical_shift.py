@@ -210,9 +210,7 @@ class TestHistoricalShiftForecaster:
         assert not await forecaster.available(hass, "sensor.nonexistent")
 
     @pytest.mark.asyncio
-    async def test_generate_forecast_returns_result(
-        self, hass: HomeAssistant, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    async def test_generate_forecast_returns_result(self, hass: HomeAssistant, monkeypatch: pytest.MonkeyPatch) -> None:
         """generate_forecast() returns a ForecastResult."""
         forecaster = HistoricalShiftForecaster(history_days=7)
         tz = dt_util.get_default_time_zone()

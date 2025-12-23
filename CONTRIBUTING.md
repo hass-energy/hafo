@@ -15,31 +15,31 @@ This document provides guidelines and information for contributors.
 
 1. Clone the repository:
 
-   ```bash
-   git clone https://github.com/hass-energy/hafo.git
-   cd hafo
-   ```
+    ```bash
+    git clone https://github.com/hass-energy/hafo.git
+    cd hafo
+    ```
 
 2. Install dependencies:
 
-   ```bash
-   uv sync --dev
-   npm install
-   ```
+    ```bash
+    uv sync --dev
+    npm install
+    ```
 
 3. Run tests:
 
-   ```bash
-   uv run pytest
-   ```
+    ```bash
+    uv run pytest
+    ```
 
 4. Run linting:
 
-   ```bash
-   uv run ruff check
-   uv run ruff format --check
-   uv run pyright
-   ```
+    ```bash
+    uv run ruff check
+    uv run ruff format --check
+    uv run pyright
+    ```
 
 ## Code Standards
 

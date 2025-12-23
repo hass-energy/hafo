@@ -38,9 +38,7 @@ class TestForecasterWithStatistics:
         await add_fake_statistics(hass, entity_id, fake_stats)
 
         # Verify the statistics were added
-        from homeassistant.components.recorder.statistics import (  # noqa: PLC0415
-            statistics_during_period,
-        )
+        from homeassistant.components.recorder.statistics import statistics_during_period  # noqa: PLC0415
 
         stats = await hass.async_add_executor_job(
             lambda: statistics_during_period(
@@ -81,9 +79,7 @@ class TestForecasterWithStatistics:
         await add_fake_statistics(hass, entity_id, fake_stats)
 
         # The statistics should now be available for querying
-        from homeassistant.components.recorder.statistics import (  # noqa: PLC0415
-            statistics_during_period,
-        )
+        from homeassistant.components.recorder.statistics import statistics_during_period  # noqa: PLC0415
 
         stats = await hass.async_add_executor_job(
             lambda: statistics_during_period(
@@ -116,9 +112,7 @@ class TestForecasterWithStatistics:
         await hass.async_block_till_done()
 
         # Verify that querying a non-existent statistic returns empty
-        from homeassistant.components.recorder.statistics import (  # noqa: PLC0415
-            statistics_during_period,
-        )
+        from homeassistant.components.recorder.statistics import statistics_during_period  # noqa: PLC0415
 
         now = dt_util.utcnow()
         stats = await hass.async_add_executor_job(

@@ -85,7 +85,7 @@ HAFO uses a consistent forecast format matching HAEO for interoperability:
 ```python
 class ForecastPoint(TypedDict):
     time: datetime  # Timestamp as timezone-aware datetime
-    value: float    # Forecast value
+    value: float  # Forecast value
 ```
 
 Forecasts are exposed as sensor attributes in JSON format:

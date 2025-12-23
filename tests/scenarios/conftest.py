@@ -4,9 +4,9 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, TypedDict
 
-import pytest
 from homeassistant.core import HomeAssistant
 from homeassistant.util import dt as dt_util
+import pytest
 
 
 class FakeStatistic(TypedDict):
@@ -58,12 +58,8 @@ async def add_fake_statistics(
         statistics: List of statistics entries with 'start' (ISO string) and 'mean' (float)
 
     """
-    from homeassistant.components.recorder.models import (  # noqa: PLC0415
-        StatisticMeanType,
-    )
-    from homeassistant.components.recorder.statistics import (  # noqa: PLC0415
-        async_add_external_statistics,
-    )
+    from homeassistant.components.recorder.models import StatisticMeanType  # noqa: PLC0415
+    from homeassistant.components.recorder.statistics import async_add_external_statistics  # noqa: PLC0415
 
     # Convert to the external statistics format
     # We use a custom source prefix for test data
@@ -87,12 +83,14 @@ async def add_fake_statistics(
         if start is None:
             continue
 
-        external_statistics.append({
-            "start": start,
-            "mean": stat["mean"],
-            "min": stat.get("min", stat["mean"]),
-            "max": stat.get("max", stat["mean"]),
-        })
+        external_statistics.append(
+            {
+                "start": start,
+                "mean": stat["mean"],
+                "min": stat.get("min", stat["mean"]),
+                "max": stat.get("max", stat["mean"]),
+            }
+        )
 
     # Add the statistics - type: ignore needed for TypedDict compatibility
     async_add_external_statistics(hass, metadata, external_statistics)  # type: ignore[arg-type]
@@ -143,9 +141,11 @@ def generate_hourly_statistics(
         pattern = (morning_peak + evening_peak) * night_dip
         value = base_value + variation * pattern
 
-        statistics_list.append({
-            "start": timestamp.isoformat(),
-            "mean": round(value, 2),
-        })
+        statistics_list.append(
+            {
+                "start": timestamp.isoformat(),
+                "mean": round(value, 2),
+            }
+        )
 
     return statistics_list
