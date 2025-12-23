@@ -1,12 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 128" width="512" height="128">
-  <title>HAEO</title>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
   <style>
-    :root{--bg:#0a0f1a;--fg:#7fb1ff;--accent:#ffd400;--text:#000;}
-    @media (prefers-color-scheme: dark){
-      :root{--bg:#0a0f1a;--fg:#7fb1ff;--accent:#ffd400;--text:#7fb1ff;}
+    :root {
+      --fg:#7fb1ff;
+      --accent:#ffd400;
+      --bg:#0a0f1a;
     }
   </style>
-
 
   <!-- Background -->
   <circle cx="64" cy="52" r="49"
@@ -41,7 +40,4 @@
         fill="var(--accent)"/>
   <rect x="22" y="114" width="84" height="14" rx="5"
         fill="var(--accent)"/>
-
-  <text x="138" y="111" font-family="Arial, sans-serif" text-anchor="start" dominant-baseline="text-top" font-size="128" fill="var(--text)">HAFO</text>
-
 </svg>
