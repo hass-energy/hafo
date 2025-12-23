@@ -78,7 +78,18 @@ HAFO creates forecast helper sensors that:
 - **Load Forecasting**: Predict home power consumption from historical patterns
 - **Temperature Patterns**: Forecast indoor temperatures based on past data
 - **Usage Prediction**: Estimate resource usage (water, gas) from history
-- **Integration with HAEO**: Provide load forecasts for energy optimization
+- **Integration with [HAEO](https://github.com/hass-energy/haeo)**: Provide load forecasts for energy optimization
+
+### Using with HAEO
+
+HAFO is designed to work seamlessly with [HAEO (Home Assistant Energy Optimizer)](https://github.com/hass-energy/haeo).
+Use HAFO to generate load forecasts, then configure HAEO to use those forecasts for optimal energy management:
+
+1. Create a HAFO forecast helper for your load sensor
+2. Configure HAEO to use the HAFO sensor as its load forecast source
+3. HAEO will use the forecast to optimize battery charging, grid import/export, and more
+
+See the [HAEO documentation](https://hass-energy.github.io/haeo/) for details on energy optimization.
 
 ## 📦 Installation
 

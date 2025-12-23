@@ -60,6 +60,7 @@ Mock the recorder statistics for testing:
 ```python
 from unittest.mock import patch
 
+
 async def test_forecast(hass: HomeAssistant) -> None:
     mock_stats = [
         {"start": datetime(2024, 1, 1, 10, 0, 0, tzinfo=UTC), "mean": 2.0},
@@ -69,7 +70,8 @@ async def test_forecast(hass: HomeAssistant) -> None:
         "custom_components.hafo.forecasters.historical_shift.get_statistics_for_sensor",
         return_value=mock_stats,
     ):
-        # Test code
+        # Test code here
+        pass
 ```
 
 ### Test Categories

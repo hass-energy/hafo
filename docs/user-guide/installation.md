@@ -19,17 +19,19 @@ HAFO can be installed via HACS (recommended) or manually.
 ## Manual Installation
 
 1. Download the latest release from the [releases page](https://github.com/hass-energy/hafo/releases)
+
 2. Extract the `hafo` folder to your `custom_components` directory
+
 3. Your directory structure should look like:
 
-   ```
-   config/
-   └── custom_components/
-       └── hafo/
-           ├── __init__.py
-           ├── manifest.json
-           └── ...
-   ```
+    ```
+    config/
+    └── custom_components/
+        └── hafo/
+            ├── __init__.py
+            ├── manifest.json
+            └── ...
+    ```
 
 4. Restart Home Assistant
 

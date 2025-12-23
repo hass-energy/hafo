@@ -22,12 +22,12 @@ graph LR
 
 With `history_days: 7`:
 
-| Historical Time      | Forecast Time        | Value |
-| -------------------- | -------------------- | ----- |
-| Jan 1, 10:00 (Mon)   | Jan 8, 10:00 (Mon)   | 2.5 kW |
-| Jan 1, 11:00 (Mon)   | Jan 8, 11:00 (Mon)   | 3.1 kW |
-| Jan 2, 10:00 (Tue)   | Jan 9, 10:00 (Tue)   | 2.8 kW |
-| ...                  | ...                  | ...   |
+| Historical Time    | Forecast Time      | Value  |
+| ------------------ | ------------------ | ------ |
+| Jan 1, 10:00 (Mon) | Jan 8, 10:00 (Mon) | 2.5 kW |
+| Jan 1, 11:00 (Mon) | Jan 8, 11:00 (Mon) | 3.1 kW |
+| Jan 2, 10:00 (Tue) | Jan 9, 10:00 (Tue) | 2.8 kW |
+| ...                | ...                | ...    |
 
 The pattern repeats: Jan 15 uses Jan 8's forecast (which came from Jan 1), and so on.
 
@@ -54,12 +54,12 @@ The `history_days` parameter determines both:
 1. How much history to fetch
 2. How far to shift it forward
 
-| Value | Pattern Captured | Use Case |
-| ----- | ---------------- | -------- |
-| 1     | Daily cycle only | Very recent patterns |
+| Value | Pattern Captured | Use Case                       |
+| ----- | ---------------- | ------------------------------ |
+| 1     | Daily cycle only | Very recent patterns           |
 | 7     | Weekly cycle     | Weekday vs weekend differences |
-| 14    | Two-week cycle   | Smoothing anomalies |
-| 30    | Monthly cycle    | Long-term averaging |
+| 14    | Two-week cycle   | Smoothing anomalies            |
+| 30    | Monthly cycle    | Long-term averaging            |
 
 !!! tip "Recommended: 7 days"
 
@@ -70,12 +70,12 @@ The `history_days` parameter determines both:
 
 The sensor provides these attributes:
 
-| Attribute              | Description                                        |
-| ---------------------- | -------------------------------------------------- |
-| `source_entity`        | The entity being forecast                          |
-| `history_days`         | Number of days of history used                     |
-| `last_forecast_update` | When the forecast was last generated               |
-| `forecast`             | List of forecast points with datetime and value    |
+| Attribute              | Description                                     |
+| ---------------------- | ----------------------------------------------- |
+| `source_entity`        | The entity being forecast                       |
+| `history_days`         | Number of days of history used                  |
+| `last_forecast_update` | When the forecast was last generated            |
+| `forecast`             | List of forecast points with datetime and value |
 
 ### Forecast Format
 
@@ -83,11 +83,11 @@ The `forecast` attribute contains a list of points:
 
 ```yaml
 forecast:
-  - datetime: "2025-01-15T10:00:00+00:00"
+  - datetime: '2025-01-15T10:00:00+00:00'
     native_value: 2.5
-  - datetime: "2025-01-15T11:00:00+00:00"
+  - datetime: '2025-01-15T11:00:00+00:00'
     native_value: 3.1
-  - datetime: "2025-01-15T12:00:00+00:00"
+  - datetime: '2025-01-15T12:00:00+00:00'
     native_value: 2.8
 ```
 

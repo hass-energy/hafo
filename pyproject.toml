@@ -10,6 +10,7 @@ dependencies = ["homeassistant>=2025.12.2"]
 [dependency-groups]
 dev = [
     "freezegun>=1.5.2",
+    "matplotlib>=3.10.8",
     "mdformat-beautysh>=1.0.0",
     "mdformat-config>=0.2.1",
     "mdformat-footnote>=0.1.1",

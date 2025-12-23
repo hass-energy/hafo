@@ -11,6 +11,13 @@ This guide covers everything you need to know to use HAFO effectively.
 
 - **[Historical Shift](forecasters/historical-shift.md)** - The main forecasting algorithm
 
+## Integration with HAEO
+
+HAFO is designed to work with [HAEO (Home Assistant Energy Optimizer)](https://hass-energy.github.io/haeo/).
+Use HAFO to generate forecasts, then configure HAEO to consume them for optimal energy management.
+
+See the [HAEO documentation](https://hass-energy.github.io/haeo/user-guide/configuration/) for details.
+
 ## Reference
 
 - **[Troubleshooting](troubleshooting.md)** - Common issues and solutions
