@@ -1,3 +1,7 @@
+<p align="center">
+    <img src="assets/logo.svg" alt="HAFO Logo" width="512">
+</p>
+
 # HAFO Documentation
 
 Welcome to the HAFO (Home Assistant Forecaster) documentation!

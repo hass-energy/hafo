@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from homeassistant.config_entries import ConfigFlow, ConfigFlowResult, OptionsFlow
+from homeassistant.config_entries import ConfigEntry, ConfigFlow, ConfigFlowResult, OptionsFlow
 from homeassistant.core import callback
 from homeassistant.helpers import selector
 import voluptuous as vol
@@ -25,7 +25,7 @@ class HafoConfigFlow(ConfigFlow, domain=DOMAIN):
 
     @staticmethod
     @callback
-    def async_get_options_flow(config_entry: Any) -> "HafoOptionsFlow":  # noqa: ARG004
+    def async_get_options_flow(config_entry: ConfigEntry) -> "HafoOptionsFlow":  # noqa: ARG004
         """Get the options flow for this handler."""
         return HafoOptionsFlow()
 

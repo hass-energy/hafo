@@ -33,7 +33,6 @@ def mock_config_entry(hass: HomeAssistant) -> MockConfigEntry:
     return entry
 
 
-@pytest.mark.asyncio
 async def test_coordinator_creation(hass: HomeAssistant, mock_config_entry: MockConfigEntry) -> None:
     """Test that coordinator can be created and configured."""
     # Set up a test entity
@@ -47,7 +46,6 @@ async def test_coordinator_creation(hass: HomeAssistant, mock_config_entry: Mock
     assert coordinator.history_days == 7
 
 
-@pytest.mark.asyncio
 async def test_coordinator_update(hass: HomeAssistant, mock_config_entry: MockConfigEntry) -> None:
     """Test that coordinator can perform update."""
     hass.states.async_set("sensor.test_power", "100.0", {"unit_of_measurement": "W"})
@@ -62,7 +60,6 @@ async def test_coordinator_update(hass: HomeAssistant, mock_config_entry: MockCo
     assert coordinator.last_update_success is True
 
 
-@pytest.mark.asyncio
 async def test_coordinator_cleanup(hass: HomeAssistant, mock_config_entry: MockConfigEntry) -> None:
     """Test that coordinator cleanup works."""
     hass.states.async_set("sensor.test_power", "100.0", {"unit_of_measurement": "W"})

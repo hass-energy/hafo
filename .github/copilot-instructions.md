@@ -91,7 +91,12 @@ class ForecastPoint(TypedDict):
 Forecasts are exposed as sensor attributes in JSON format:
 
 ```json
-[{"time": "2025-01-15T10:00:00+00:00", "value": 2.5}, ...]
+[
+  {
+    "time": "2025-01-15T10:00:00+00:00",
+    "value": 2.5
+  }
+]
 ```
 
 ### Version matching

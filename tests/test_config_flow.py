@@ -26,7 +26,6 @@ def config_flow(hass: HomeAssistant) -> HafoConfigFlow:
     return flow
 
 
-@pytest.mark.asyncio
 async def test_user_flow_shows_form(hass: HomeAssistant, config_flow: HafoConfigFlow) -> None:
     """Test that the user flow shows the form initially."""
     result = await config_flow.async_step_user(user_input=None)
@@ -35,7 +34,6 @@ async def test_user_flow_shows_form(hass: HomeAssistant, config_flow: HafoConfig
     assert result.get("step_id") == "user"
 
 
-@pytest.mark.asyncio
 async def test_user_flow_creates_entry(hass: HomeAssistant, config_flow: HafoConfigFlow) -> None:
     """Test that the user flow creates a config entry."""
     # Set up a test entity
@@ -61,7 +59,6 @@ async def test_user_flow_creates_entry(hass: HomeAssistant, config_flow: HafoCon
     assert data[CONF_HISTORY_DAYS] == 7
 
 
-@pytest.mark.asyncio
 async def test_user_flow_entity_not_found(hass: HomeAssistant, config_flow: HafoConfigFlow) -> None:
     """Test that the user flow shows error for missing entity."""
     # Submit with a non-existent entity

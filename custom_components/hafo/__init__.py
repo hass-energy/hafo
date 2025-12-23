@@ -17,7 +17,7 @@ type HafoConfigEntry = ConfigEntry[HafoDataUpdateCoordinator]
 
 async def async_setup_entry(hass: HomeAssistant, entry: HafoConfigEntry) -> bool:
     """Set up Home Assistant Forecaster from a config entry."""
-    _LOGGER.info("Setting up HAFO forecaster: %s", entry.title)
+    _LOGGER.info("Setting up forecaster: %s", entry.title)
 
     # Create and store coordinator
     coordinator = HafoDataUpdateCoordinator(hass, entry)
@@ -32,19 +32,19 @@ async def async_setup_entry(hass: HomeAssistant, entry: HafoConfigEntry) -> bool
     # Register update listener for config changes
     entry.async_on_unload(entry.add_update_listener(async_update_listener))
 
-    _LOGGER.info("HAFO forecaster setup complete: %s", entry.title)
+    _LOGGER.info("Forecaster setup complete: %s", entry.title)
     return True
 
 
 async def async_update_listener(hass: HomeAssistant, entry: HafoConfigEntry) -> None:
     """Handle options update."""
-    _LOGGER.info("HAFO configuration changed, reloading: %s", entry.title)
+    _LOGGER.info("Configuration changed, reloading: %s", entry.title)
     await hass.config_entries.async_reload(entry.entry_id)
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: HafoConfigEntry) -> bool:
     """Unload a config entry."""
-    _LOGGER.info("Unloading HAFO forecaster: %s", entry.title)
+    _LOGGER.info("Unloading forecaster: %s", entry.title)
 
     # Unload platforms
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
