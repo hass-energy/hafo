@@ -7,22 +7,28 @@
     }
   </style>
 
+  <!-- Background -->
+  <circle cx="64" cy="52" r="49"
+          fill="var(--bg)"
+          stroke="var(--fg)"
+          stroke-width="6"/>
+
   <!-- Crystal ball -->
-  <circle cx="64" cy="52" r="34"
+  <circle cx="64" cy="52" r="49"
           fill="none"
           stroke="var(--fg)"
           stroke-width="6"/>
 
   <!-- Inner glow -->
-  <circle cx="64" cy="52" r="28"
+  <circle cx="64" cy="52" r="43"
           fill="none"
           stroke="var(--fg)"
           stroke-width="2"
-          opacity="0.4"/>
+          opacity="0.35"/>
 
   <!-- Forecast pulse -->
   <polyline
-    points="40,54 52,54 56,46 62,64 70,38 78,54 88,54"
+    points="34,54 50,54 56,44 64,68 74,36 84,54 94,54"
     fill="none"
     stroke="var(--accent)"
     stroke-width="4"
@@ -30,8 +36,8 @@
     stroke-linejoin="round"/>
 
   <!-- Stand -->
-  <rect x="38" y="88" width="52" height="10" rx="4"
+  <rect x="30" y="100" width="68" height="12" rx="4"
         fill="var(--accent)"/>
-  <rect x="30" y="100" width="68" height="12" rx="5"
+  <rect x="22" y="114" width="84" height="14" rx="5"
         fill="var(--accent)"/>
 </svg>
