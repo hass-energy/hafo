@@ -13,7 +13,6 @@ import pytest
 
 from .conftest import add_fake_statistics, generate_hourly_statistics
 
-
 # Tests for forecaster integration with recorder statistics
 
 

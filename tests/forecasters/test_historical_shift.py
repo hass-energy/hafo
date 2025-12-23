@@ -15,7 +15,6 @@ from custom_components.hafo.forecasters.historical_shift import (
     shift_history_to_forecast,
 )
 
-
 # Tests for shift_history_to_forecast function
 
 
