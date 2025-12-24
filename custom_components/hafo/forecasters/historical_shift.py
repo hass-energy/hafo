@@ -71,7 +71,8 @@ async def get_statistics_for_sensor(
         raise ValueError(msg)
 
     try:
-        from homeassistant.helpers.recorder import DATA_INSTANCE
+        # Recorder is an optional after_dependency, so we import inline after checking it's loaded
+        from homeassistant.helpers.recorder import DATA_INSTANCE  # noqa: PLC0415
 
         if DATA_INSTANCE not in hass.data:
             msg = "Recorder not initialized"
@@ -80,7 +81,8 @@ async def get_statistics_for_sensor(
         msg = "Recorder component not available"
         raise ValueError(msg) from None
 
-    from homeassistant.components.recorder.statistics import statistics_during_period
+    # Recorder is an optional after_dependency, so we import inline after checking it's loaded
+    from homeassistant.components.recorder.statistics import statistics_during_period  # noqa: PLC0415
 
     try:
         statistics: dict[str, list[StatisticsRow]] = await hass.async_add_executor_job(

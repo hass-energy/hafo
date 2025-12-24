@@ -4,22 +4,13 @@ HAFO follows a simple, focused architecture designed for extensibility.
 
 ## Overview
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                     Home Assistant                          │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  ┌─────────────┐    ┌──────────────┐    ┌───────────────┐  │
-│  │ Config Flow │───▶│ Forecaster   │───▶│ Forecast      │  │
-│  │             │    │ Coordinator  │    │ Sensor        │  │
-│  └─────────────┘    └──────┬───────┘    └───────────────┘  │
-│                            │                                │
-│                     ┌──────▼───────┐                        │
-│                     │ Recorder     │                        │
-│                     │ Statistics   │                        │
-│                     └──────────────┘                        │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph HA[Home Assistant]
+        CF[Config Flow] --> FC[Forecaster Coordinator]
+        FC --> FS[Forecast Sensor]
+        FC --> RS[Recorder Statistics]
+    end
 ```
 
 ## Components
