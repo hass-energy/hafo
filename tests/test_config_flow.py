@@ -148,25 +148,6 @@ async def test_river_ml_no_input_entities(hass: HomeAssistant, config_flow: Hafo
     assert result.get("errors") == {CONF_INPUT_ENTITIES: "no_input_entities"}
 
 
-async def test_river_ml_output_in_inputs(hass: HomeAssistant, config_flow: HafoConfigFlow) -> None:
-    """Test that the RiverML step shows error when output is in inputs."""
-    hass.states.async_set("sensor.input1", "10.0")
-    hass.states.async_set("sensor.output", "100.0")
-
-    result = await config_flow.async_step_river_ml(
-        user_input={
-            CONF_INPUT_ENTITIES: ["sensor.input1", "sensor.output"],  # Output is in inputs
-            CONF_OUTPUT_ENTITY: "sensor.output",
-            CONF_HISTORY_DAYS: DEFAULT_HISTORY_DAYS,
-            CONF_FORECAST_HOURS: DEFAULT_FORECAST_HOURS,
-            CONF_RIVER_MODEL_TYPE: DEFAULT_RIVER_MODEL_TYPE,
-        },
-    )
-
-    assert result.get("type") == FlowResultType.FORM
-    assert result.get("errors") == {CONF_OUTPUT_ENTITY: "output_in_inputs"}
-
-
 async def test_river_ml_output_entity_not_found(hass: HomeAssistant, config_flow: HafoConfigFlow) -> None:
     """Test that the RiverML step shows error when output entity missing."""
     hass.states.async_set("sensor.input1", "10.0")

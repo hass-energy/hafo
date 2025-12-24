@@ -156,9 +156,6 @@ class HafoConfigFlow(ConfigFlow, domain=DOMAIN):
             # Validate output entity exists
             elif output_entity and self.hass.states.get(output_entity) is None:
                 errors[CONF_OUTPUT_ENTITY] = "entity_not_found"
-            # Validate output is not in inputs
-            elif output_entity in input_entities:
-                errors[CONF_OUTPUT_ENTITY] = "output_in_inputs"
             # Validate all input entities exist
             else:
                 for entity_id in input_entities:

@@ -40,8 +40,7 @@
     },
     "error": {
       "entity_not_found": "The selected entity was not found",
-      "no_input_entities": "At least one input entity is required",
-      "output_in_inputs": "Output entity cannot be one of the input entities"
+      "no_input_entities": "At least one input entity is required"
     },
     "abort": { "already_configured": "A forecast helper for this entity already exists" }
   },
