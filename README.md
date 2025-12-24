@@ -51,7 +51,7 @@ This focused approach means:
 - **Recorder Integration**: Leverage Home Assistant's built-in statistics
 - **Extensible Architecture**: Add new forecasting engines easily
 
-## � Installation
+## 📦 Installation
 
 ### HACS Installation (Recommended)
 
@@ -73,7 +73,7 @@ This focused approach means:
 2. Extract the `hafo` folder to your `custom_components` directory
 3. Restart Home Assistant
 
-## �🔮 Forecasting Engines
+## 🔮 Forecasting Engines
 
 ### Historical Shift
 
