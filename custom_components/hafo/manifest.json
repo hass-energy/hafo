@@ -9,6 +9,6 @@
   "integration_type": "helper",
   "iot_class": "calculated",
   "issue_tracker": "https://github.com/hass-energy/hafo/issues",
-  "requirements": [],
+  "requirements": ["river>=0.23.0"],
   "version": "0.1.0"
 }

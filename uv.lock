@@ -1094,7 +1094,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "homeassistant", specifier = ">=2025.12.2" },
-    { name = "river", specifier = ">=0.22.0" },
+    { name = "river", specifier = ">=0.23.0" },
 ]
 
 [package.metadata.requires-dev]
