@@ -8,14 +8,11 @@ The algorithm is straightforward:
 
 1. **Fetch History**: Retrieve the last N days of hourly statistics from the recorder
 2. **Shift Forward**: Add N days to each timestamp to project into the future
-3. **Cycle Pattern**: Repeat the pattern to fill the entire forecast horizon
 
 ```mermaid
 graph LR
     A[Historical Data<br/>Jan 1-7] --> B[Shift Forward<br/>+7 days]
     B --> C[Forecast<br/>Jan 8-14]
-    C --> D[Cycle<br/>Jan 15-21]
-    D --> E[Extended Forecast]
 ```
 
 ## Example
@@ -28,8 +25,6 @@ With `history_days: 7`:
 | Jan 1, 11:00 (Mon) | Jan 8, 11:00 (Mon) | 3.1 kW |
 | Jan 2, 10:00 (Tue) | Jan 9, 10:00 (Tue) | 2.8 kW |
 | ...                | ...                | ...    |
-
-The pattern repeats: Jan 15 uses Jan 8's forecast (which came from Jan 1), and so on.
 
 ## When to Use
 

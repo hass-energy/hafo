@@ -13,7 +13,8 @@ from custom_components.hafo.const import (
     DOMAIN,
     FORECAST_TYPE_HISTORICAL_SHIFT,
 )
-from custom_components.hafo.coordinator import HafoDataUpdateCoordinator
+from custom_components.hafo.coordinator import create_forecaster
+from custom_components.hafo.forecasters.historical_shift import HistoricalShiftForecaster
 
 
 @pytest.fixture
@@ -33,38 +34,57 @@ def mock_config_entry(hass: HomeAssistant) -> MockConfigEntry:
     return entry
 
 
-async def test_coordinator_creation(hass: HomeAssistant, mock_config_entry: MockConfigEntry) -> None:
-    """Test that coordinator can be created and configured."""
+async def test_forecaster_creation(hass: HomeAssistant, mock_config_entry: MockConfigEntry) -> None:
+    """Test that forecaster can be created and configured."""
     # Set up a test entity
     hass.states.async_set("sensor.test_power", "100.0", {"unit_of_measurement": "W"})
 
-    # Create coordinator directly
-    coordinator = HafoDataUpdateCoordinator(hass, mock_config_entry)
+    # Create forecaster via factory
+    forecaster = create_forecaster(hass, mock_config_entry)
 
-    assert coordinator is not None
-    assert coordinator.source_entity == "sensor.test_power"
-    assert coordinator.history_days == 7
+    assert forecaster is not None
+    assert isinstance(forecaster, HistoricalShiftForecaster)
+    assert forecaster.source_entity == "sensor.test_power"
+    assert forecaster.history_days == 7
 
 
-async def test_coordinator_update(hass: HomeAssistant, mock_config_entry: MockConfigEntry) -> None:
-    """Test that coordinator can perform update."""
+async def test_forecaster_update(hass: HomeAssistant, mock_config_entry: MockConfigEntry) -> None:
+    """Test that forecaster can perform update."""
     hass.states.async_set("sensor.test_power", "100.0", {"unit_of_measurement": "W"})
 
-    coordinator = HafoDataUpdateCoordinator(hass, mock_config_entry)
+    forecaster = create_forecaster(hass, mock_config_entry)
 
-    # Mock the forecaster to avoid recorder dependency
-    with patch.object(coordinator, "_async_update_data", new_callable=AsyncMock, return_value=None):
-        await coordinator.async_refresh()
+    # Mock the update to avoid recorder dependency
+    with patch.object(forecaster, "_async_update_data", new_callable=AsyncMock, return_value=None):
+        await forecaster.async_refresh()
 
     # Verify we can access the data
-    assert coordinator.last_update_success is True
+    assert forecaster.last_update_success is True
 
 
-async def test_coordinator_cleanup(hass: HomeAssistant, mock_config_entry: MockConfigEntry) -> None:
-    """Test that coordinator cleanup works."""
+async def test_forecaster_cleanup(hass: HomeAssistant, mock_config_entry: MockConfigEntry) -> None:
+    """Test that forecaster cleanup works."""
     hass.states.async_set("sensor.test_power", "100.0", {"unit_of_measurement": "W"})
 
-    coordinator = HafoDataUpdateCoordinator(hass, mock_config_entry)
+    forecaster = create_forecaster(hass, mock_config_entry)
 
     # Cleanup should not raise
-    coordinator.cleanup()
+    forecaster.cleanup()
+
+
+async def test_create_forecaster_unknown_type(hass: HomeAssistant) -> None:
+    """Test that create_forecaster raises for unknown forecast type."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="Test Forecast",
+        data={
+            CONF_SOURCE_ENTITY: "sensor.test_power",
+            CONF_HISTORY_DAYS: 7,
+            CONF_FORECAST_TYPE: "unknown_type",
+        },
+        entry_id="test_entry_id",
+    )
+    entry.add_to_hass(hass)
+
+    with pytest.raises(ValueError, match="Unknown forecast type"):
+        create_forecaster(hass, entry)

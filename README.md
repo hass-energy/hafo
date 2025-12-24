@@ -51,6 +51,28 @@ This focused approach means:
 - **Recorder Integration**: Leverage Home Assistant's built-in statistics
 - **Extensible Architecture**: Add new forecasting engines easily
 
+## 📦 Installation
+
+### HACS Installation (Recommended)
+
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=hass-energy&repository=hafo&category=integration)
+
+1. Open HACS in your Home Assistant instance
+2. Click on "Integrations"
+3. Click the three dots in the top right corner
+4. Select "Custom repositories"
+5. Add this repository URL: `https://github.com/hass-energy/hafo`
+6. Select "Integration" as the category
+7. Click "Add"
+8. Search for "HAFO" and click "Download"
+9. Restart Home Assistant
+
+### Manual Installation
+
+1. Download the latest release from the [releases page](https://github.com/hass-energy/hafo/releases)
+2. Extract the `hafo` folder to your `custom_components` directory
+3. Restart Home Assistant
+
 ## 🔮 Forecasting Engines
 
 ### Historical Shift
@@ -60,7 +82,6 @@ Best for data with repeating patterns (daily, weekly cycles).
 
 - Fetches hourly statistics from the recorder
 - Shifts data forward by configurable number of days
-- Cycles patterns to fill any forecast horizon
 
 _More forecasting engines coming soon!_
 
@@ -91,35 +112,13 @@ Use HAFO to generate load forecasts, then configure HAEO to use those forecasts 
 
 See the [HAEO documentation](https://haeo.io/) for details on energy optimization.
 
-## 📦 Installation
-
-### HACS Installation (Recommended)
-
-[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=hass-energy&repository=hafo&category=integration)
-
-1. Open HACS in your Home Assistant instance
-2. Click on "Integrations"
-3. Click the three dots in the top right corner
-4. Select "Custom repositories"
-5. Add this repository URL: `https://github.com/hass-energy/hafo`
-6. Select "Integration" as the category
-7. Click "Add"
-8. Search for "HAFO" and click "Download"
-9. Restart Home Assistant
-
-### Manual Installation
-
-1. Download the latest release from the [releases page](https://github.com/hass-energy/hafo/releases)
-2. Extract the `hafo` folder to your `custom_components` directory
-3. Restart Home Assistant
-
 ## ⚙️ Configuration
 
 ### Creating a Forecast Helper
 
-1. Go to **Settings** → **Devices & Services**
-2. Click **Add Integration**
-3. Search for **HAFO**
+1. Go to **Settings** → **Devices & Services** → **Helpers**
+2. Click **Create Helper**
+3. Search for **Forecast** and select it
 4. Configure your forecast helper:
     - **Source Entity**: The sensor to generate a forecast for
     - **History Days**: Number of days of history to use (for historical forecasters)

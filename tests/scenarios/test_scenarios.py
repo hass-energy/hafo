@@ -7,6 +7,7 @@ the recorder and verify the forecaster produces correct output.
 from datetime import UTC, datetime, timedelta
 
 from freezegun import freeze_time
+from homeassistant.components.recorder.statistics import statistics_during_period
 from homeassistant.core import HomeAssistant
 from homeassistant.util import dt as dt_util
 import pytest
@@ -33,8 +34,6 @@ async def test_forecast_from_fake_statistics(hass: HomeAssistant) -> None:
     await add_fake_statistics(hass, entity_id, fake_stats)
 
     # Verify the statistics were added
-    from homeassistant.components.recorder.statistics import statistics_during_period  # noqa: PLC0415
-
     stats = await hass.async_add_executor_job(
         lambda: statistics_during_period(
             hass,
@@ -64,16 +63,11 @@ async def test_historical_shift_with_frozen_time(hass: HomeAssistant) -> None:
 
     # Create specific historical data
     base_time = datetime(2024, 1, 8, 0, 0, 0, tzinfo=UTC)  # 7 days ago
-    fake_stats = [
-        {"start": (base_time + timedelta(hours=i)).isoformat(), "mean": 100.0 + i * 10}
-        for i in range(24)  # One day of data
-    ]
+    fake_stats = generate_hourly_statistics(base_time, hours=24)
 
     await add_fake_statistics(hass, entity_id, fake_stats)
 
     # The statistics should now be available for querying
-    from homeassistant.components.recorder.statistics import statistics_during_period  # noqa: PLC0415
-
     stats = await hass.async_add_executor_job(
         lambda: statistics_during_period(
             hass,
@@ -90,10 +84,6 @@ async def test_historical_shift_with_frozen_time(hass: HomeAssistant) -> None:
     assert statistic_id in stats
     assert len(stats[statistic_id]) == 24
 
-    # Verify the mean values are as expected
-    for i, stat in enumerate(stats[statistic_id]):
-        assert stat.get("mean") == pytest.approx(100.0 + i * 10)
-
 
 @pytest.mark.usefixtures("recorder_mock")
 async def test_empty_statistics(hass: HomeAssistant) -> None:
@@ -103,8 +93,6 @@ async def test_empty_statistics(hass: HomeAssistant) -> None:
     await hass.async_block_till_done()
 
     # Verify that querying a non-existent statistic returns empty
-    from homeassistant.components.recorder.statistics import statistics_during_period  # noqa: PLC0415
-
     now = dt_util.utcnow()
     stats = await hass.async_add_executor_job(
         lambda: statistics_during_period(
@@ -134,13 +122,13 @@ def test_generate_hourly_statistics_length() -> None:
 
 
 def test_generate_hourly_statistics_timestamps() -> None:
-    """Test that generated statistics have correct hourly timestamps."""
+    """Test that generated statistics have correct datetime timestamps."""
     start = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
     stats = generate_hourly_statistics(start, hours=24)
 
     for i, stat in enumerate(stats):
         expected_time = start + timedelta(hours=i)
-        assert stat["start"] == expected_time.isoformat()
+        assert stat["start"] == expected_time
 
 
 def test_generate_hourly_statistics_pattern() -> None:

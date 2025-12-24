@@ -10,8 +10,12 @@ from datetime import datetime, timedelta
 import logging
 from typing import TYPE_CHECKING, Any
 
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.util import dt as dt_util
+
+from custom_components.hafo.const import CONF_HISTORY_DAYS, CONF_SOURCE_ENTITY, DEFAULT_HISTORY_DAYS, DOMAIN
 
 if TYPE_CHECKING:
     from homeassistant.components.recorder.statistics import StatisticsRow
@@ -67,6 +71,8 @@ async def get_statistics_for_sensor(
         raise ValueError(msg)
 
     try:
+        # Recorder is an optional after_dependency, so we import inline after checking it's loaded
+        from homeassistant.components.recorder.statistics import statistics_during_period  # noqa: PLC0415
         from homeassistant.helpers.recorder import DATA_INSTANCE  # noqa: PLC0415
 
         if DATA_INSTANCE not in hass.data:
@@ -75,8 +81,6 @@ async def get_statistics_for_sensor(
     except ImportError:
         msg = "Recorder component not available"
         raise ValueError(msg) from None
-
-    from homeassistant.components.recorder.statistics import statistics_during_period  # noqa: PLC0415
 
     try:
         statistics: dict[str, list[StatisticsRow]] = await hass.async_add_executor_job(
@@ -144,100 +148,105 @@ def shift_history_to_forecast(
     return forecast
 
 
-def cycle_forecast_to_horizon(
-    forecast: list[ForecastPoint],
-    history_days: int,
-    horizon_end: datetime,
-) -> list[ForecastPoint]:
-    """Repeat/cycle forecast series until it covers the full horizon.
-
-    If we have N days of history and the horizon extends beyond that,
-    repeat the pattern by shifting forward by N days each cycle.
-
-    Args:
-        forecast: Original forecast series (already shifted once)
-        history_days: Number of days in one cycle
-        horizon_end: End time of the horizon to fill
-
-    Returns:
-        Extended list of ForecastPoints covering the full horizon.
-
-    """
-    if not forecast:
-        return forecast
-
-    cycle_duration = timedelta(days=history_days)
-    first_time = forecast[0].time
-
-    # Calculate how many cycles we need
-    horizon_span = horizon_end - first_time
-    if horizon_span <= timedelta():
-        return forecast
-
-    cycles_needed = int(horizon_span / cycle_duration) + 1
-
-    # Build extended series with all needed cycles
-    extended: list[ForecastPoint] = list(forecast)
-    for cycle in range(1, cycles_needed + 1):
-        cycle_shift = cycle_duration * cycle
-        for point in forecast:
-            new_time = point.time + cycle_shift
-            if new_time > horizon_end:
-                break
-            extended.append(ForecastPoint(time=new_time, value=point.value))
-
-    return extended
-
-
-class HistoricalShiftForecaster:
+class HistoricalShiftForecaster(DataUpdateCoordinator[ForecastResult | None]):
     """Forecaster that builds forecasts from sensor historical statistics.
 
-    When a sensor doesn't have a forecast attribute, this forecaster fetches
-    historical data, shifts it forward, and repeats to fill the horizon.
+    This forecaster fetches historical data from the recorder and shifts it
+    forward by N days to project past patterns into the future.
+
+    Update interval: Hourly, aligned with recorder hourly statistics.
     """
 
-    def __init__(self, history_days: int = 7) -> None:
+    # Update interval: aligned with hourly statistics from the recorder
+    UPDATE_INTERVAL = timedelta(hours=1)
+
+    def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
         """Initialize the forecaster.
 
         Args:
-            history_days: Number of days of history to fetch and shift forward.
+            hass: Home Assistant instance
+            entry: Config entry containing forecaster settings
 
         """
-        self._history_days = history_days
+        self._entry = entry
+        self._source_entity: str = entry.data[CONF_SOURCE_ENTITY]
+        self._history_days: int = int(entry.data.get(CONF_HISTORY_DAYS, DEFAULT_HISTORY_DAYS))
+
+        super().__init__(
+            hass,
+            _LOGGER,
+            name=f"{DOMAIN}_{entry.entry_id}",
+            update_interval=self.UPDATE_INTERVAL,
+            config_entry=entry,
+        )
+
+    @property
+    def source_entity(self) -> str:
+        """Return the source entity ID."""
+        return self._source_entity
 
     @property
     def history_days(self) -> int:
         """Return the number of history days used for forecasting."""
         return self._history_days
 
-    async def available(self, hass: HomeAssistant, entity_id: str) -> bool:
-        """Check if we can generate a forecast for the given sensor.
+    @property
+    def entry(self) -> ConfigEntry:
+        """Return the config entry."""
+        return self._entry
 
-        Args:
-            hass: Home Assistant instance
-            entity_id: The sensor entity ID
+    async def _available(self) -> bool:
+        """Check if we can generate a forecast for the configured sensor.
 
         Returns:
             True if the recorder component is available and sensor exists.
 
         """
-        if "recorder" not in hass.config.components:
+        if "recorder" not in self.hass.config.components:
             return False
 
-        return hass.states.get(entity_id) is not None
+        return self.hass.states.get(self._source_entity) is not None
 
-    async def generate_forecast(
-        self,
-        hass: HomeAssistant,
-        entity_id: str,
-        horizon_hours: int = 168,
-    ) -> ForecastResult:
+    async def _async_update_data(self) -> ForecastResult | None:
+        """Fetch and update forecast data.
+
+        Returns:
+            ForecastResult with the latest forecast, or None if unavailable.
+
+        Raises:
+            UpdateFailed: If the forecast cannot be generated.
+
+        """
+        try:
+            # Check if we can generate data for this entity
+            if not await self._available():
+                _LOGGER.warning(
+                    "Forecaster not available for entity %s - recorder may not be ready",
+                    self._source_entity,
+                )
+                return None
+
+            # Generate the forecast
+            result = await self._generate_forecast()
+
+            _LOGGER.debug(
+                "Generated forecast for %s with %d points",
+                self._source_entity,
+                len(result.forecast),
+            )
+
+            return result
+
+        except ValueError as err:
+            _LOGGER.warning("Failed to generate forecast: %s", err)
+            # Return None instead of raising to allow graceful degradation
+            return None
+        except Exception as err:
+            msg = f"Error generating forecast: {err}"
+            raise UpdateFailed(msg) from err
+
+    async def _generate_forecast(self) -> ForecastResult:
         """Generate a forecast by shifting historical data forward.
-
-        Args:
-            hass: Home Assistant instance
-            entity_id: Sensor entity ID to fetch history for
-            horizon_hours: How far into the future to forecast (default 7 days = 168 hours)
 
         Returns:
             ForecastResult with the generated forecast.
@@ -249,32 +258,32 @@ class HistoricalShiftForecaster:
         now = dt_util.now()
         start_time = now - timedelta(days=self._history_days)
         end_time = now
-        horizon_end = now + timedelta(hours=horizon_hours)
 
         # Fetch historical statistics
         try:
-            statistics = await get_statistics_for_sensor(hass, entity_id, start_time, end_time)
+            statistics = await get_statistics_for_sensor(self.hass, self._source_entity, start_time, end_time)
         except ValueError:
-            _LOGGER.warning("Failed to get statistics for %s", entity_id)
+            _LOGGER.warning("Failed to get statistics for %s", self._source_entity)
             raise
 
         if not statistics:
-            msg = f"No historical data available for {entity_id}"
+            msg = f"No historical data available for {self._source_entity}"
             raise ValueError(msg)
 
         # Shift history forward to create forecast
         forecast = shift_history_to_forecast(statistics, self._history_days)
 
         if not forecast:
-            msg = f"No valid forecast points generated for {entity_id}"
+            msg = f"No valid forecast points generated for {self._source_entity}"
             raise ValueError(msg)
-
-        # Cycle/repeat to fill the full horizon
-        forecast = cycle_forecast_to_horizon(forecast, self._history_days, horizon_end)
 
         return ForecastResult(
             forecast=forecast,
-            source_entity=entity_id,
+            source_entity=self._source_entity,
             history_days=self._history_days,
             generated_at=now,
         )
+
+    def cleanup(self) -> None:
+        """Clean up coordinator resources."""
+        _LOGGER.debug("Cleaning up forecaster for %s", self._source_entity)
