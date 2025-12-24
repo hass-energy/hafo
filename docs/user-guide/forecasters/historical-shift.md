@@ -78,11 +78,11 @@ The `forecast` attribute contains a list of points:
 
 ```yaml
 forecast:
-  - datetime: "2025-01-15T10:00:00+00:00"
+  - datetime: '2025-01-15T10:00:00+00:00'
     native_value: 2.5
-  - datetime: "2025-01-15T11:00:00+00:00"
+  - datetime: '2025-01-15T11:00:00+00:00'
     native_value: 3.1
-  - datetime: "2025-01-15T12:00:00+00:00"
+  - datetime: '2025-01-15T12:00:00+00:00'
     native_value: 2.8
 ```
 
