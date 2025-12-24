@@ -3,17 +3,45 @@
     "flow_title": "{name}",
     "step": {
       "user": {
-        "title": "Create Forecast Helper",
-        "description": "Create a forecast sensor that shifts historical data forward to predict future values.",
-        "data": { "forecast_type": "Forecast type", "history_days": "History days", "source_entity": "Source entity" },
+        "title": "Select Forecast Type",
+        "description": "Choose the forecasting algorithm to use for generating predictions.",
+        "data": { "forecast_type": "Forecast type" },
         "data_description": {
-          "forecast_type": "The forecasting algorithm to use",
+          "forecast_type": "Historical Shift uses past data shifted forward. RiverML uses machine learning with multiple input entities."
+        }
+      },
+      "historical_shift": {
+        "title": "Configure Historical Shift Forecast",
+        "description": "Create a forecast sensor that shifts historical data forward to predict future values.",
+        "data": { "history_days": "History days", "source_entity": "Source entity" },
+        "data_description": {
           "history_days": "Number of days of history to fetch and shift forward (1-30)",
           "source_entity": "The sensor entity to generate a forecast for"
         }
+      },
+      "river_ml": {
+        "title": "Configure RiverML Forecast",
+        "description": "Create a forecast sensor using machine learning with multiple input entities to predict output values.",
+        "data": {
+          "forecast_hours": "Forecast hours",
+          "history_days": "History days",
+          "input_entities": "Input entities",
+          "output_entity": "Output entity",
+          "river_model_type": "Model type"
+        },
+        "data_description": {
+          "forecast_hours": "Number of hours to forecast into the future (1-720)",
+          "history_days": "Number of days of historical data for initial training (1-30)",
+          "input_entities": "Entities to use as input features for prediction",
+          "output_entity": "The entity to predict (target)",
+          "river_model_type": "SNARIMAX handles seasonal patterns with exogenous variables. Linear Regression is a simpler baseline."
+        }
       }
     },
-    "error": { "entity_not_found": "The selected entity was not found" },
+    "error": {
+      "entity_not_found": "The selected entity was not found",
+      "no_input_entities": "At least one input entity is required"
+    },
     "abort": { "already_configured": "A forecast helper for this entity already exists" }
   },
   "options": {
@@ -21,8 +49,16 @@
       "init": {
         "title": "Configure Forecast Helper",
         "description": "Adjust the forecast settings",
-        "data": { "history_days": "History days" },
-        "data_description": { "history_days": "Number of days of history to fetch and shift forward (1-30)" }
+        "data": {
+          "forecast_hours": "Forecast hours",
+          "history_days": "History days",
+          "river_model_type": "Model type"
+        },
+        "data_description": {
+          "forecast_hours": "Number of hours to forecast into the future (1-720)",
+          "history_days": "Number of days of history to fetch and shift forward (1-30)",
+          "river_model_type": "SNARIMAX handles seasonal patterns with exogenous variables. Linear Regression is a simpler baseline."
+        }
       }
     }
   },

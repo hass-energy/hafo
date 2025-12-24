@@ -7,15 +7,17 @@ coordinator based on the forecast type configured in the entry.
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 
-from .const import CONF_FORECAST_TYPE, FORECAST_TYPE_HISTORICAL_SHIFT
+from .const import CONF_FORECAST_TYPE, FORECAST_TYPE_HISTORICAL_SHIFT, FORECAST_TYPE_RIVER_ML
 from .forecasters.historical_shift import ForecastResult, HistoricalShiftForecaster
+from .forecasters.river_ml import RiverMLForecaster
 
 # Type alias for any forecaster coordinator
-type ForecasterCoordinator = HistoricalShiftForecaster
+type ForecasterCoordinator = HistoricalShiftForecaster | RiverMLForecaster
 
 # Mapping of forecast types to their coordinator classes
 FORECASTER_TYPES: dict[str, type[ForecasterCoordinator]] = {
     FORECAST_TYPE_HISTORICAL_SHIFT: HistoricalShiftForecaster,
+    FORECAST_TYPE_RIVER_ML: RiverMLForecaster,
 }
 
 

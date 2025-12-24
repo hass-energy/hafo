@@ -4,11 +4,9 @@ This forecaster builds a forecast by fetching historical statistics from the rec
 and shifting them forward by a configurable number of days.
 """
 
-from collections.abc import Mapping, Sequence
-from dataclasses import dataclass
+from collections.abc import Sequence
 from datetime import datetime, timedelta
 import logging
-from typing import TYPE_CHECKING, Any
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -17,88 +15,9 @@ from homeassistant.util import dt as dt_util
 
 from custom_components.hafo.const import CONF_HISTORY_DAYS, CONF_SOURCE_ENTITY, DEFAULT_HISTORY_DAYS, DOMAIN
 
-if TYPE_CHECKING:
-    from homeassistant.components.recorder.statistics import StatisticsRow
+from .common import ForecastPoint, ForecastResult, StatisticsLike, get_statistics_for_sensor
 
 _LOGGER = logging.getLogger(__name__)
-
-
-# Type alias for statistics - accepts either StatisticsRow or dict-like objects
-StatisticsLike = Mapping[str, Any]
-
-
-@dataclass(frozen=True, slots=True)
-class ForecastPoint:
-    """A single point in a forecast time series."""
-
-    time: datetime
-    value: float
-
-
-@dataclass(frozen=True, slots=True)
-class ForecastResult:
-    """Result of a forecast operation."""
-
-    forecast: list[ForecastPoint]
-    source_entity: str
-    history_days: int
-    generated_at: datetime
-
-
-async def get_statistics_for_sensor(
-    hass: HomeAssistant,
-    entity_id: str,
-    start_time: datetime,
-    end_time: datetime,
-) -> Sequence["StatisticsRow"]:
-    """Fetch hourly statistics for a sensor entity.
-
-    Args:
-        hass: Home Assistant instance
-        entity_id: The sensor entity ID to fetch statistics for
-        start_time: Start of the time range
-        end_time: End of the time range
-
-    Returns:
-        List of statistics rows with 'start' and 'mean' fields.
-
-    Raises:
-        ValueError: If the recorder is not available or not set up.
-
-    """
-    if "recorder" not in hass.config.components:
-        msg = "Recorder component not loaded"
-        raise ValueError(msg)
-
-    try:
-        # Recorder is an optional after_dependency, so we import inline after checking it's loaded
-        from homeassistant.components.recorder.statistics import statistics_during_period  # noqa: PLC0415
-        from homeassistant.helpers.recorder import DATA_INSTANCE  # noqa: PLC0415
-
-        if DATA_INSTANCE not in hass.data:
-            msg = "Recorder not initialized"
-            raise ValueError(msg)
-    except ImportError:
-        msg = "Recorder component not available"
-        raise ValueError(msg) from None
-
-    try:
-        statistics: dict[str, list[StatisticsRow]] = await hass.async_add_executor_job(
-            lambda: statistics_during_period(
-                hass,
-                start_time,
-                end_time,
-                {entity_id},
-                "hour",
-                None,
-                {"mean"},
-            )
-        )
-    except Exception as e:
-        msg = f"Failed to fetch statistics: {e}"
-        raise ValueError(msg) from e
-
-    return statistics.get(entity_id, [])
 
 
 def shift_history_to_forecast(

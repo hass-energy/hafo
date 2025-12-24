@@ -11,9 +11,20 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util import dt as dt_util
 
-from .const import ATTR_FORECAST, ATTR_HISTORY_DAYS, ATTR_LAST_UPDATED, ATTR_SOURCE_ENTITY, DOMAIN
+from .const import (
+    ATTR_FORECAST,
+    ATTR_HISTORY_DAYS,
+    ATTR_LAST_UPDATED,
+    ATTR_MODEL_METRICS,
+    ATTR_SOURCE_ENTITY,
+    CONF_FORECAST_TYPE,
+    DEFAULT_FORECAST_TYPE,
+    DOMAIN,
+    FORECAST_TYPE_HISTORICAL_SHIFT,
+    FORECAST_TYPE_RIVER_ML,
+)
 from .coordinator import ForecasterCoordinator
-from .forecasters.historical_shift import ForecastResult
+from .forecasters.common import ForecastResult
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -100,6 +111,10 @@ class HafoForecastSensor(CoordinatorEntity[ForecasterCoordinator], SensorEntity)
             attrs[ATTR_LAST_UPDATED] = result.generated_at.isoformat()
             attrs[ATTR_FORECAST] = self._format_forecast(result)
 
+            # Include model metrics if available
+            if result.metrics:
+                attrs[ATTR_MODEL_METRICS] = result.metrics
+
         return attrs
 
     def _format_forecast(self, result: ForecastResult) -> list[dict[str, Any]]:
@@ -123,6 +138,15 @@ class HafoForecastSensor(CoordinatorEntity[ForecasterCoordinator], SensorEntity)
         self._update_from_source_entity()
         super()._handle_coordinator_update()
 
+    def _get_model_name(self) -> str:
+        """Get the model name based on forecast type."""
+        forecast_type = self.coordinator.entry.data.get(CONF_FORECAST_TYPE, DEFAULT_FORECAST_TYPE)
+        if forecast_type == FORECAST_TYPE_RIVER_ML:
+            return "RiverML Forecaster"
+        if forecast_type == FORECAST_TYPE_HISTORICAL_SHIFT:
+            return "Historical Shift Forecaster"
+        return "Forecaster"
+
     @property
     def device_info(self) -> DeviceInfo:
         """Return device information."""
@@ -130,5 +154,5 @@ class HafoForecastSensor(CoordinatorEntity[ForecasterCoordinator], SensorEntity)
             identifiers={(DOMAIN, self.coordinator.entry.entry_id)},
             name=self.coordinator.entry.title,
             manufacturer="HAFO",
-            model="Historical Shift Forecaster",
+            model=self._get_model_name(),
         )
