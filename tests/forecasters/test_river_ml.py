@@ -179,11 +179,11 @@ def test_create_linear_regression_model(hass: HomeAssistant) -> None:
     assert isinstance(model, compose.Pipeline)
 
 
-# Tests for data alignment
+# Tests for building training data
 
 
-def test_align_statistics_common_timestamps(hass: HomeAssistant) -> None:
-    """Aligns statistics across multiple entities by timestamp."""
+def test_build_training_data_common_timestamps(hass: HomeAssistant) -> None:
+    """Builds training data from statistics, matching by timestamp."""
     entry = _create_mock_entry(hass, input_entities=["sensor.input1"], output_entity="sensor.output")
     forecaster = RiverMLForecaster(hass, entry)
 
@@ -201,17 +201,17 @@ def test_align_statistics_common_timestamps(hass: HomeAssistant) -> None:
         ],
     }
 
-    aligned = forecaster._align_statistics(statistics)
+    training_data = forecaster._build_training_data(statistics)
 
     # Only timestamps with all entities should be included
-    assert len(aligned) == 2
-    assert aligned[0][1] == {"sensor.input1": 10.0}
-    assert aligned[0][2] == pytest.approx(100.0)
-    assert aligned[1][1] == {"sensor.input1": 20.0}
-    assert aligned[1][2] == pytest.approx(200.0)
+    assert len(training_data) == 2
+    assert training_data[0][1] == {"sensor.input1": 10.0}
+    assert training_data[0][2] == pytest.approx(100.0)
+    assert training_data[1][1] == {"sensor.input1": 20.0}
+    assert training_data[1][2] == pytest.approx(200.0)
 
 
-def test_align_statistics_empty_when_no_common_timestamps(hass: HomeAssistant) -> None:
+def test_build_training_data_empty_when_no_common_timestamps(hass: HomeAssistant) -> None:
     """Returns empty list when no common timestamps exist."""
     entry = _create_mock_entry(hass, input_entities=["sensor.input1"], output_entity="sensor.output")
     forecaster = RiverMLForecaster(hass, entry)
@@ -226,12 +226,12 @@ def test_align_statistics_empty_when_no_common_timestamps(hass: HomeAssistant) -
         ],
     }
 
-    aligned = forecaster._align_statistics(statistics)
+    training_data = forecaster._build_training_data(statistics)
 
-    assert aligned == []
+    assert training_data == []
 
 
-def test_align_statistics_skips_none_values(hass: HomeAssistant) -> None:
+def test_build_training_data_skips_none_values(hass: HomeAssistant) -> None:
     """Skips entries with None start or mean values."""
     entry = _create_mock_entry(hass, input_entities=["sensor.input1"], output_entity="sensor.output")
     forecaster = RiverMLForecaster(hass, entry)
@@ -248,10 +248,10 @@ def test_align_statistics_skips_none_values(hass: HomeAssistant) -> None:
         ],
     }
 
-    aligned = forecaster._align_statistics(statistics)
+    training_data = forecaster._build_training_data(statistics)
 
-    assert len(aligned) == 1
-    assert aligned[0][1] == {"sensor.input1": 10.0}
+    assert len(training_data) == 1
+    assert training_data[0][1] == {"sensor.input1": 10.0}
 
 
 # Tests for model persistence

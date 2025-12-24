@@ -268,8 +268,10 @@ class RiverMLForecaster(DataUpdateCoordinator[ForecastResult | None]):
         await self.hass.async_add_executor_job(self._save_model_to_disk)
 
     async def _train_from_scratch(self, now: datetime) -> None:
-        """Train a new model on full historical dataset."""
-        start_time = now - timedelta(days=self._history_days)
+        """Train a new model on all available historical data."""
+        # Use a very early date to fetch all available statistics from recorder
+        # The recorder will only return data it has, so this effectively gets everything
+        start_time = datetime(2000, 1, 1, tzinfo=dt_util.get_default_time_zone())
         end_time = now
 
         # Fetch statistics for all entities
@@ -281,17 +283,23 @@ class RiverMLForecaster(DataUpdateCoordinator[ForecastResult | None]):
             end_time,
         )
 
-        # Align data across entities
-        aligned_data = self._align_statistics(statistics)
+        # Build training data from statistics
+        training_data = self._build_training_data(statistics)
 
-        if not aligned_data:
-            msg = "No aligned historical data available for training"
+        if not training_data:
+            msg = "No historical data available for training"
             raise ValueError(msg)
 
         # Create and train model
         self._model = self._create_model()
 
-        for _, features, target in aligned_data:
+        for _, features, target in training_data:
+            # Update metrics with prediction before learning (for consistency with incremental)
+            prediction = self._predict_one(features)
+            if prediction is not None:
+                self._metrics.update(target, prediction)
+                self._metrics_samples += 1
+
             self._train_one(features, target)
             # Update last known inputs
             self._last_known_inputs = features.copy()
@@ -299,7 +307,7 @@ class RiverMLForecaster(DataUpdateCoordinator[ForecastResult | None]):
         self._last_update_timestamp = now
         _LOGGER.info(
             "Trained model on %d data points for %s",
-            len(aligned_data),
+            len(training_data),
             self._output_entity,
         )
 
@@ -327,16 +335,16 @@ class RiverMLForecaster(DataUpdateCoordinator[ForecastResult | None]):
             end_time,
         )
 
-        # Align data across entities
-        aligned_data = self._align_statistics(statistics)
+        # Build training data from statistics
+        training_data = self._build_training_data(statistics)
 
-        if not aligned_data:
-            _LOGGER.debug("No new aligned data for incremental update")
+        if not training_data:
+            _LOGGER.debug("No new data for incremental update")
             self._last_update_timestamp = now
             return
 
         # Update model incrementally
-        for _, features, target in aligned_data:
+        for _, features, target in training_data:
             # Update metrics with prediction before learning
             if self._model is not None:
                 prediction = self._predict_one(features)
@@ -351,19 +359,23 @@ class RiverMLForecaster(DataUpdateCoordinator[ForecastResult | None]):
         self._last_update_timestamp = now
         _LOGGER.debug(
             "Incremental update with %d data points",
-            len(aligned_data),
+            len(training_data),
         )
 
-    def _align_statistics(
+    def _build_training_data(
         self,
         statistics: Mapping[str, Sequence[Mapping[str, Any]]],
     ) -> list[tuple[datetime, dict[str, float], float]]:
-        """Align statistics across multiple entities by timestamp.
+        """Build training data from statistics.
+
+        The HA statistics API already buckets data by hour, so timestamps
+        naturally align across entities. We just need to extract the data
+        and match by timestamp.
 
         Returns list of (timestamp, features_dict, target_value) tuples
-        where all entities have data.
+        where all entities have data for that timestamp.
         """
-        # Build timestamp -> values mapping for each entity
+        # Build timestamp -> value mapping for each entity
         entity_data: dict[str, dict[datetime, float]] = {}
 
         for entity_id, stats in statistics.items():
@@ -375,34 +387,37 @@ class RiverMLForecaster(DataUpdateCoordinator[ForecastResult | None]):
                 if start is None or mean is None:
                     continue
 
+                # Convert timestamp to datetime if needed
                 if isinstance(start, datetime):
                     dt_start = start
+                elif isinstance(start, float | int):
+                    dt_start = datetime.fromtimestamp(start, tz=dt_util.get_default_time_zone())
                 else:
-                    try:
-                        timestamp = float(start)
-                        dt_start = datetime.fromtimestamp(timestamp, tz=dt_util.get_default_time_zone())
-                    except (TypeError, ValueError):
-                        continue
+                    continue
 
                 entity_data[entity_id][dt_start] = float(mean)
 
-        # Find common timestamps where all entities have data
         if not entity_data:
             return []
 
-        common_timestamps = set.intersection(*(set(data.keys()) for data in entity_data.values()))
+        # Find timestamps where all entities have data
+        all_entity_ids = set(self._input_entities) | {self._output_entity}
+        if not all(eid in entity_data for eid in all_entity_ids):
+            return []
+
+        common_timestamps = set.intersection(*(set(entity_data[eid].keys()) for eid in all_entity_ids))
 
         if not common_timestamps:
             return []
 
-        # Build aligned data
-        aligned: list[tuple[datetime, dict[str, float], float]] = []
+        # Build training data sorted by timestamp
+        training_data: list[tuple[datetime, dict[str, float], float]] = []
         for timestamp in sorted(common_timestamps):
             features = {entity_id: entity_data[entity_id][timestamp] for entity_id in self._input_entities}
             target = entity_data[self._output_entity][timestamp]
-            aligned.append((timestamp, features, target))
+            training_data.append((timestamp, features, target))
 
-        return aligned
+        return training_data
 
     def _train_one(self, features: dict[str, float], target: float) -> None:
         """Train the model on a single data point."""
