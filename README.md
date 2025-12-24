@@ -120,9 +120,9 @@ See the [HAEO documentation](https://haeo.io/) for details on energy optimizatio
 2. Click **Create Helper**
 3. Search for **Forecast** and select it
 4. Configure your forecast helper:
-    - **Source Entity**: The sensor to generate a forecast for
-    - **History Days**: Number of days of history to use (for historical forecasters)
-    - **Forecast Type**: The forecasting engine to use
+   - **Source Entity**: The sensor to generate a forecast for
+   - **History Days**: Number of days of history to use (for historical forecasters)
+   - **Forecast Type**: The forecasting engine to use
 
 ## 📊 Forecast Data Format
 
@@ -133,11 +133,11 @@ state: 2.5 # Current/nearest forecast value
 attributes:
   source_entity: sensor.home_power
   history_days: 7
-  last_forecast_update: '2025-01-15T10:00:00+00:00'
+  last_forecast_update: "2025-01-15T10:00:00+00:00"
   forecast:
-    - time: '2025-01-15T10:00:00+00:00'
+    - time: "2025-01-15T10:00:00+00:00"
       value: 2.5
-    - time: '2025-01-15T11:00:00+00:00'
+    - time: "2025-01-15T11:00:00+00:00"
       value: 3.1
     # ... more forecast points
 ```
