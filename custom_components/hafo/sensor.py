@@ -12,7 +12,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util import dt as dt_util
 
 from .const import ATTR_FORECAST, ATTR_HISTORY_DAYS, ATTR_LAST_UPDATED, ATTR_SOURCE_ENTITY, DOMAIN
-from .coordinator import HafoDataUpdateCoordinator
+from .coordinator import ForecasterCoordinator
 from .forecasters.historical_shift import ForecastResult
 
 _LOGGER = logging.getLogger(__name__)
@@ -24,7 +24,7 @@ async def async_setup_entry(
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """Set up HAFO sensors based on a config entry."""
-    coordinator: HafoDataUpdateCoordinator = entry.runtime_data
+    coordinator: ForecasterCoordinator = entry.runtime_data
 
     entities: list[SensorEntity] = [
         HafoForecastSensor(coordinator),
@@ -33,13 +33,13 @@ async def async_setup_entry(
     async_add_entities(entities)
 
 
-class HafoForecastSensor(CoordinatorEntity[HafoDataUpdateCoordinator], SensorEntity):
+class HafoForecastSensor(CoordinatorEntity[ForecasterCoordinator], SensorEntity):
     """Sensor that provides forecast data from historical statistics."""
 
     _attr_has_entity_name = True
     _attr_state_class = SensorStateClass.MEASUREMENT
 
-    def __init__(self, coordinator: HafoDataUpdateCoordinator) -> None:
+    def __init__(self, coordinator: ForecasterCoordinator) -> None:
         """Initialize the forecast sensor.
 
         Args:

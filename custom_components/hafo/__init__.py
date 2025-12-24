@@ -6,21 +6,21 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 
-from .coordinator import HafoDataUpdateCoordinator
+from .coordinator import ForecasterCoordinator, create_forecaster
 
 _LOGGER = logging.getLogger(__name__)
 
 PLATFORMS: list[Platform] = [Platform.SENSOR]
 
-type HafoConfigEntry = ConfigEntry[HafoDataUpdateCoordinator]
+type HafoConfigEntry = ConfigEntry[ForecasterCoordinator]
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: HafoConfigEntry) -> bool:
     """Set up Home Assistant Forecaster from a config entry."""
     _LOGGER.info("Setting up forecaster: %s", entry.title)
 
-    # Create and store coordinator
-    coordinator = HafoDataUpdateCoordinator(hass, entry)
+    # Create the forecaster coordinator based on configuration
+    coordinator = create_forecaster(hass, entry)
     entry.runtime_data = coordinator
 
     # Perform initial data fetch

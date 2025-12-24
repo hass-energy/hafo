@@ -4,9 +4,9 @@ HAFO creates forecast helpers through the Home Assistant UI.
 
 ## Creating a Forecast Helper
 
-1. Go to **Settings** → **Devices & Services**
-2. Click **Add Integration**
-3. Search for **HAFO** (Home Assistant Forecaster)
+1. Go to **Settings** → **Devices & Services** → **Helpers**
+2. Click **Create Helper**
+3. Search for **Forecast** and select it
 4. Fill in the configuration:
 
 | Field         | Description                           | Default          |
@@ -47,7 +47,7 @@ becomes the forecast for next Monday 2pm.
 
 Currently, HAFO supports one forecasting algorithm:
 
-- **Historical Shift** - Shifts historical data forward by N days and cycles to fill the horizon
+- **Historical Shift** - Shifts historical data forward by N days
 
 More forecasting algorithms may be added in future releases.
 
@@ -55,8 +55,8 @@ More forecasting algorithms may be added in future releases.
 
 To change the configuration after creation:
 
-1. Go to **Settings** → **Devices & Services**
-2. Find HAFO and click **Configure**
+1. Go to **Settings** → **Devices & Services** → **Helpers**
+2. Find your forecast helper and click **Configure**
 3. Adjust the settings
 4. Click **Submit**
 

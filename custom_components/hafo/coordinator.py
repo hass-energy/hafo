@@ -1,120 +1,50 @@
-"""Data update coordinator for Home Assistant Forecaster."""
+"""Forecaster factory for Home Assistant Forecaster.
 
-from datetime import timedelta
-import logging
+This module provides factory functions to create the appropriate forecaster
+coordinator based on the forecast type configured in the entry.
+"""
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from .const import (
-    CONF_FORECAST_TYPE,
-    CONF_HISTORY_DAYS,
-    CONF_SOURCE_ENTITY,
-    DEFAULT_FORECAST_TYPE,
-    DEFAULT_HISTORY_DAYS,
-    DOMAIN,
-    FORECAST_TYPE_HISTORICAL_SHIFT,
-)
-from .forecasters import HistoricalShiftForecaster
-from .forecasters.historical_shift import ForecastResult
+from .const import CONF_FORECAST_TYPE, FORECAST_TYPE_HISTORICAL_SHIFT
+from .forecasters.historical_shift import ForecastResult, HistoricalShiftForecaster
 
-_LOGGER = logging.getLogger(__name__)
+# Type alias for any forecaster coordinator
+type ForecasterCoordinator = HistoricalShiftForecaster
 
-# Update interval for forecast refresh (hourly)
-UPDATE_INTERVAL = timedelta(hours=1)
+# Mapping of forecast types to their coordinator classes
+FORECASTER_TYPES: dict[str, type[ForecasterCoordinator]] = {
+    FORECAST_TYPE_HISTORICAL_SHIFT: HistoricalShiftForecaster,
+}
 
 
-class HafoDataUpdateCoordinator(DataUpdateCoordinator[ForecastResult | None]):
-    """Coordinator to manage forecast data updates."""
+def create_forecaster(hass: HomeAssistant, entry: ConfigEntry) -> ForecasterCoordinator:
+    """Create the appropriate forecaster coordinator for a config entry.
 
-    def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
-        """Initialize the coordinator.
+    Args:
+        hass: Home Assistant instance
+        entry: Config entry containing the forecast type and settings
 
-        Args:
-            hass: Home Assistant instance
-            entry: Config entry for this forecaster
+    Returns:
+        The forecaster coordinator instance
 
-        """
-        self._entry = entry
-        self._source_entity = entry.data[CONF_SOURCE_ENTITY]
-        self._history_days = entry.data.get(CONF_HISTORY_DAYS, DEFAULT_HISTORY_DAYS)
-        self._forecast_type = entry.data.get(CONF_FORECAST_TYPE, DEFAULT_FORECAST_TYPE)
+    Raises:
+        ValueError: If the forecast type is not recognized
 
-        # Initialize the appropriate forecaster
-        self._forecaster = self._create_forecaster()
+    """
+    forecast_type = entry.data.get(CONF_FORECAST_TYPE)
 
-        super().__init__(
-            hass,
-            _LOGGER,
-            name=f"{DOMAIN}_{entry.entry_id}",
-            update_interval=UPDATE_INTERVAL,
-            config_entry=entry,
-        )
+    if forecast_type not in FORECASTER_TYPES:
+        msg = f"Unknown forecast type: {forecast_type}"
+        raise ValueError(msg)
 
-    def _create_forecaster(self) -> HistoricalShiftForecaster:
-        """Create the forecaster based on configuration."""
-        if self._forecast_type == FORECAST_TYPE_HISTORICAL_SHIFT:
-            return HistoricalShiftForecaster(history_days=int(self._history_days))
-        # Default to historical shift
-        return HistoricalShiftForecaster(history_days=int(self._history_days))
+    forecaster_class = FORECASTER_TYPES[forecast_type]
+    return forecaster_class(hass, entry)
 
-    @property
-    def source_entity(self) -> str:
-        """Return the source entity ID."""
-        return self._source_entity
 
-    @property
-    def history_days(self) -> int:
-        """Return the number of history days."""
-        return int(self._history_days)
-
-    @property
-    def entry(self) -> ConfigEntry:
-        """Return the config entry."""
-        return self._entry
-
-    async def _async_update_data(self) -> ForecastResult | None:
-        """Fetch and update forecast data.
-
-        Returns:
-            ForecastResult with the latest forecast, or None if unavailable.
-
-        Raises:
-            UpdateFailed: If the forecast cannot be generated.
-
-        """
-        try:
-            # Check if forecaster can generate data for this entity
-            if not await self._forecaster.available(self.hass, self._source_entity):
-                _LOGGER.warning(
-                    "Forecaster not available for entity %s - recorder may not be ready",
-                    self._source_entity,
-                )
-                return None
-
-            # Generate the forecast
-            result = await self._forecaster.generate_forecast(
-                self.hass,
-                self._source_entity,
-            )
-
-            _LOGGER.debug(
-                "Generated forecast for %s with %d points",
-                self._source_entity,
-                len(result.forecast),
-            )
-
-            return result
-
-        except ValueError as err:
-            _LOGGER.warning("Failed to generate forecast: %s", err)
-            # Return None instead of raising to allow graceful degradation
-            return None
-        except Exception as err:
-            msg = f"Error generating forecast: {err}"
-            raise UpdateFailed(msg) from err
-
-    def cleanup(self) -> None:
-        """Clean up coordinator resources."""
-        _LOGGER.debug("Cleaning up coordinator for %s", self._source_entity)
+__all__ = [
+    "ForecastResult",
+    "ForecasterCoordinator",
+    "create_forecaster",
+]

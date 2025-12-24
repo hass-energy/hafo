@@ -6,14 +6,17 @@ from typing import Any
 from homeassistant.core import HomeAssistant
 from homeassistant.util import dt as dt_util
 import pytest
+from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.hafo.forecasters import historical_shift as hs
-from custom_components.hafo.forecasters.historical_shift import (
-    ForecastPoint,
-    HistoricalShiftForecaster,
-    cycle_forecast_to_horizon,
-    shift_history_to_forecast,
+from custom_components.hafo.const import (
+    CONF_FORECAST_TYPE,
+    CONF_HISTORY_DAYS,
+    CONF_SOURCE_ENTITY,
+    DOMAIN,
+    FORECAST_TYPE_HISTORICAL_SHIFT,
 )
+from custom_components.hafo.forecasters import historical_shift as hs
+from custom_components.hafo.forecasters.historical_shift import HistoricalShiftForecaster, shift_history_to_forecast
 
 # Tests for shift_history_to_forecast function
 
@@ -97,131 +100,77 @@ def test_shift_sorts_by_timestamp() -> None:
     assert result[2].value == pytest.approx(3.0)
 
 
-# Tests for cycle_forecast_to_horizon function
-
-
-def test_cycle_returns_empty_for_empty_forecast() -> None:
-    """Returns empty list when forecast is empty."""
-    horizon_end = datetime(2024, 1, 15, 0, 0, 0, tzinfo=UTC)
-    result = cycle_forecast_to_horizon([], history_days=7, horizon_end=horizon_end)
-    assert result == []
-
-
-def test_cycle_no_cycle_when_forecast_covers_horizon() -> None:
-    """Doesn't add cycles when forecast already covers horizon."""
-    base = datetime(2024, 1, 8, 10, 0, 0, tzinfo=UTC)
-    forecast = [
-        ForecastPoint(time=base, value=100.0),
-        ForecastPoint(time=base + timedelta(hours=1), value=200.0),
-    ]
-    # Horizon ends before the last forecast point
-    horizon_end = base + timedelta(minutes=30)
-
-    result = cycle_forecast_to_horizon(forecast, history_days=7, horizon_end=horizon_end)
-
-    # Should be unchanged
-    assert len(result) == 2
-    assert result[0].value == 100.0
-    assert result[1].value == 200.0
-
-
-def test_cycle_repeats_to_fill_horizon() -> None:
-    """Repeats forecast pattern to fill a longer horizon."""
-    base = datetime(2024, 1, 8, 0, 0, 0, tzinfo=UTC)
-    # 2 days of history data (shifted to future)
-    forecast = [
-        ForecastPoint(time=base, value=100.0),  # Day 1, 00:00
-        ForecastPoint(time=base + timedelta(hours=12), value=200.0),  # Day 1, 12:00
-        ForecastPoint(time=base + timedelta(days=1), value=150.0),  # Day 2, 00:00
-        ForecastPoint(time=base + timedelta(days=1, hours=12), value=250.0),  # Day 2, 12:00
-    ]
-
-    # Horizon is 6 days (should repeat 3 times)
-    horizon_end = base + timedelta(days=6)
-
-    result = cycle_forecast_to_horizon(forecast, history_days=2, horizon_end=horizon_end)
-
-    # Should have more points than original (3 cycles worth)
-    assert len(result) > 4
-    # First 4 should be unchanged
-    assert result[0].value == 100.0
-    assert result[1].value == 200.0
-    assert result[2].value == 150.0
-    assert result[3].value == 250.0
-    # Cycle 2 should have same values at shifted times
-    assert result[4].value == 100.0  # First value repeats
-    assert result[5].value == 200.0
-
-
-def test_cycle_partial_cycle_at_end() -> None:
-    """Stops cycling when horizon is reached mid-cycle."""
-    base = datetime(2024, 1, 8, 0, 0, 0, tzinfo=UTC)
-    forecast = [
-        ForecastPoint(time=base, value=100.0),
-        ForecastPoint(time=base + timedelta(hours=12), value=200.0),
-    ]
-
-    # Horizon is 1.5 cycles (18 hours into a 24-hour pattern)
-    horizon_end = base + timedelta(hours=30)
-
-    result = cycle_forecast_to_horizon(forecast, history_days=1, horizon_end=horizon_end)
-
-    # Should have 3 points: original 2 + first point of cycle 2
-    assert len(result) == 3
-    assert result[0].value == 100.0
-    assert result[1].value == 200.0
-    assert result[2].value == 100.0  # First point repeated
-
-
 # Tests for HistoricalShiftForecaster class
 
 
-def test_forecaster_default_history_days() -> None:
-    """Forecaster uses default history days when not specified."""
-    forecaster = HistoricalShiftForecaster()
-    assert forecaster.history_days == 7
+def _create_mock_entry(hass: HomeAssistant, history_days: int = 7) -> MockConfigEntry:
+    """Create a mock config entry for testing."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="Test Forecast",
+        data={
+            CONF_SOURCE_ENTITY: "sensor.test",
+            CONF_HISTORY_DAYS: history_days,
+            CONF_FORECAST_TYPE: FORECAST_TYPE_HISTORICAL_SHIFT,
+        },
+        entry_id="test_entry_id",
+    )
+    entry.add_to_hass(hass)
+    return entry
 
 
-def test_forecaster_custom_history_days() -> None:
-    """Forecaster respects custom history days."""
-    forecaster = HistoricalShiftForecaster(history_days=14)
+def test_forecaster_properties(hass: HomeAssistant) -> None:
+    """Forecaster exposes configuration properties."""
+    entry = _create_mock_entry(hass, history_days=14)
+    forecaster = HistoricalShiftForecaster(hass, entry)
+
     assert forecaster.history_days == 14
+    assert forecaster.source_entity == "sensor.test"
+    assert forecaster.entry is entry
 
 
 async def test_forecaster_available_when_recorder_loaded_and_sensor_exists(hass: HomeAssistant) -> None:
-    """available() returns True when recorder is loaded and sensor exists."""
+    """_available() returns True when recorder is loaded and sensor exists."""
     hass.config.components.add("recorder")
     hass.states.async_set("sensor.test", "5.0")
 
-    forecaster = HistoricalShiftForecaster()
-    assert await forecaster.available(hass, "sensor.test")
+    entry = _create_mock_entry(hass)
+    forecaster = HistoricalShiftForecaster(hass, entry)
+
+    assert await forecaster._available()
 
 
 async def test_forecaster_not_available_when_recorder_missing(
     hass: HomeAssistant, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """available() returns False when recorder is not loaded."""
+    """_available() returns False when recorder is not loaded."""
     monkeypatch.setattr(
         hass.config.components,
         "__contains__",
         lambda component: component != "recorder",
     )
-    forecaster = HistoricalShiftForecaster()
-    assert not await forecaster.available(hass, "sensor.test")
+    entry = _create_mock_entry(hass)
+    forecaster = HistoricalShiftForecaster(hass, entry)
+
+    assert not await forecaster._available()
 
 
 async def test_forecaster_not_available_when_sensor_missing(hass: HomeAssistant) -> None:
-    """available() returns False when sensor doesn't exist."""
+    """_available() returns False when sensor doesn't exist."""
     hass.config.components.add("recorder")
-    forecaster = HistoricalShiftForecaster()
-    assert not await forecaster.available(hass, "sensor.nonexistent")
+    entry = _create_mock_entry(hass)
+    forecaster = HistoricalShiftForecaster(hass, entry)
+
+    assert not await forecaster._available()
 
 
 async def test_forecaster_generate_forecast_returns_result(
     hass: HomeAssistant, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """generate_forecast() returns a ForecastResult."""
-    forecaster = HistoricalShiftForecaster(history_days=7)
+    """_generate_forecast() returns a ForecastResult."""
+    hass.states.async_set("sensor.test", "100.0")
+    entry = _create_mock_entry(hass, history_days=7)
+    forecaster = HistoricalShiftForecaster(hass, entry)
     tz = dt_util.get_default_time_zone()
 
     # Historical data from Jan 1-7
@@ -241,19 +190,21 @@ async def test_forecaster_generate_forecast_returns_result(
 
     monkeypatch.setattr(hs, "get_statistics_for_sensor", mock_get_stats)
 
-    result = await forecaster.generate_forecast(hass, "sensor.test")
+    result = await forecaster._generate_forecast()
 
     assert result is not None
     assert result.source_entity == "sensor.test"
     assert result.history_days == 7
-    assert len(result.forecast) >= 2
+    # No cycling, so should have exactly 2 points
+    assert len(result.forecast) == 2
 
 
 async def test_forecaster_generate_forecast_raises_when_no_data(
     hass: HomeAssistant, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """generate_forecast() raises when no historical data is available."""
-    forecaster = HistoricalShiftForecaster()
+    """_generate_forecast() raises when no historical data is available."""
+    entry = _create_mock_entry(hass)
+    forecaster = HistoricalShiftForecaster(hass, entry)
 
     async def mock_get_stats(
         _hass: HomeAssistant,
@@ -266,4 +217,9 @@ async def test_forecaster_generate_forecast_raises_when_no_data(
     monkeypatch.setattr(hs, "get_statistics_for_sensor", mock_get_stats)
 
     with pytest.raises(ValueError, match="No historical data available"):
-        await forecaster.generate_forecast(hass, "sensor.test")
+        await forecaster._generate_forecast()
+
+
+def test_forecaster_update_interval() -> None:
+    """Forecaster has hourly update interval."""
+    assert timedelta(hours=1) == HistoricalShiftForecaster.UPDATE_INTERVAL
