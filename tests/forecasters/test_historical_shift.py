@@ -194,7 +194,7 @@ async def test_forecaster_returns_none_when_recorder_not_loaded(
     hass: HomeAssistant,
 ) -> None:
     """Forecaster returns None when recorder component is not loaded."""
-    # Note: recorder is NOT in hass.config.components
+    # The recorder component is not added to hass, so it should fail gracefully
     entry = _create_mock_entry(hass)
     forecaster = HistoricalShiftForecaster(hass, entry)
 
