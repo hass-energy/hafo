@@ -49,6 +49,7 @@ class HafoForecastSensor(CoordinatorEntity[ForecasterCoordinator], SensorEntity)
         # Set up entity attributes
         self._attr_unique_id = f"{coordinator.entry.entry_id}_forecast"
         self._attr_name = f"{coordinator.entry.title} Forecast"
+        self._attr_icon = "mdi:crystal-ball"
 
         # Copy unit of measurement from source entity if available
         self._source_entity = coordinator.source_entity
