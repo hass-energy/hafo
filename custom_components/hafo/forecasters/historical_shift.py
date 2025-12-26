@@ -170,7 +170,10 @@ class HistoricalShiftForecaster(DataUpdateCoordinator[ForecastResult | None]):
         """
         self._entry = entry
         self._source_entity: str = entry.data[CONF_SOURCE_ENTITY]
-        self._history_days: int = int(entry.data.get(CONF_HISTORY_DAYS, DEFAULT_HISTORY_DAYS))
+        # Read from options first (set via options flow), fall back to data (initial config)
+        self._history_days: int = int(
+            entry.options.get(CONF_HISTORY_DAYS, entry.data.get(CONF_HISTORY_DAYS, DEFAULT_HISTORY_DAYS))
+        )
 
         super().__init__(
             hass,

@@ -5,6 +5,7 @@ from unittest.mock import patch
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 import pytest
+from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.hafo.config_flow import HafoConfigFlow
 from custom_components.hafo.const import (
@@ -13,7 +14,10 @@ from custom_components.hafo.const import (
     CONF_SOURCE_ENTITY,
     DEFAULT_FORECAST_TYPE,
     DEFAULT_HISTORY_DAYS,
+    DOMAIN,
+    FORECAST_TYPE_HISTORICAL_SHIFT,
 )
+from custom_components.hafo.coordinator import create_forecaster
 
 
 @pytest.fixture
@@ -72,3 +76,39 @@ async def test_user_flow_entity_not_found(hass: HomeAssistant, config_flow: Hafo
 
     assert result.get("type") == FlowResultType.FORM
     assert result.get("errors") == {CONF_SOURCE_ENTITY: "entity_not_found"}
+
+
+async def test_forecaster_uses_updated_options(hass: HomeAssistant) -> None:
+    """Test that forecaster uses history_days from options after update.
+
+    When a user edits the integration options, the new values are stored
+    in entry.options. The forecaster should read from options first,
+    falling back to data for initial values.
+    """
+    # Set up a test entity
+    hass.states.async_set("sensor.test_power", "100.0", {"unit_of_measurement": "W"})
+
+    # Create entry with initial history_days=7 in data
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="Test Forecast",
+        data={
+            CONF_SOURCE_ENTITY: "sensor.test_power",
+            CONF_HISTORY_DAYS: 7,
+            CONF_FORECAST_TYPE: FORECAST_TYPE_HISTORICAL_SHIFT,
+        },
+        entry_id="test_entry_id",
+    )
+    entry.add_to_hass(hass)
+
+    # Simulate options update: user changed history_days to 14
+    hass.config_entries.async_update_entry(entry, options={CONF_HISTORY_DAYS: 14})
+
+    # Create forecaster (as would happen during reload after options update)
+    forecaster = create_forecaster(hass, entry)
+
+    # Forecaster should use the updated value from options, not the original from data
+    assert forecaster.history_days == 14, (
+        f"Expected history_days=14 from options, got {forecaster.history_days}. "
+        "Forecaster is not reading from entry.options."
+    )
