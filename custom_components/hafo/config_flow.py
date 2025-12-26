@@ -49,7 +49,7 @@ class HafoConfigFlow(ConfigFlow, domain=DOMAIN):
                 # Create a friendly title from the source entity
                 state = self.hass.states.get(source_entity)
                 friendly_name = state.attributes.get("friendly_name", source_entity) if state else source_entity
-                title = f"{friendly_name} Forecast"
+                title = friendly_name
 
                 return self.async_create_entry(
                     title=title,
