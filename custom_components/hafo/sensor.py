@@ -6,7 +6,6 @@ from typing import Any
 from homeassistant.components.sensor import SensorEntity, SensorStateClass
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util import dt as dt_util
@@ -36,7 +35,6 @@ async def async_setup_entry(
 class HafoForecastSensor(CoordinatorEntity[ForecasterCoordinator], SensorEntity):
     """Sensor that provides forecast data from historical statistics."""
 
-    _attr_has_entity_name = True
     _attr_state_class = SensorStateClass.MEASUREMENT
 
     def __init__(self, coordinator: ForecasterCoordinator) -> None:
@@ -50,7 +48,7 @@ class HafoForecastSensor(CoordinatorEntity[ForecasterCoordinator], SensorEntity)
 
         # Set up entity attributes
         self._attr_unique_id = f"{coordinator.entry.entry_id}_forecast"
-        self._attr_name = "Forecast"
+        self._attr_name = f"{coordinator.entry.title} Forecast"
 
         # Copy unit of measurement from source entity if available
         self._source_entity = coordinator.source_entity
@@ -123,12 +121,3 @@ class HafoForecastSensor(CoordinatorEntity[ForecasterCoordinator], SensorEntity)
         self._update_from_source_entity()
         super()._handle_coordinator_update()
 
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Return device information."""
-        return DeviceInfo(
-            identifiers={(DOMAIN, self.coordinator.entry.entry_id)},
-            name=self.coordinator.entry.title,
-            manufacturer="HAFO",
-            model="Historical Shift Forecaster",
-        )
