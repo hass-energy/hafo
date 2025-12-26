@@ -1,6 +1,6 @@
 {
   "domain": "hafo",
-  "name": "Home Assistant Forecaster",
+  "name": "HAFO Forecast",
   "after_dependencies": ["recorder"],
   "codeowners": ["@TrentHouliston"],
   "config_flow": true,
