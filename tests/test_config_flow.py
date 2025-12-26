@@ -53,7 +53,7 @@ async def test_user_flow_creates_entry(hass: HomeAssistant, config_flow: HafoCon
         )
 
     assert result.get("type") == FlowResultType.CREATE_ENTRY
-    assert result.get("title") == "Test Power Forecast"
+    assert result.get("title") == "Test Power"
     data = dict(result.get("data", {}))
     assert data[CONF_SOURCE_ENTITY] == "sensor.test_power"
     assert data[CONF_HISTORY_DAYS] == 7
