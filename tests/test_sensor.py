@@ -208,4 +208,3 @@ async def test_sensor_only_persists_non_none_values(hass: HomeAssistant) -> None
     # Should not have stored None values
     assert CONF_SOURCE_UNIT not in entry.data
     assert CONF_SOURCE_DEVICE_CLASS not in entry.data
-
