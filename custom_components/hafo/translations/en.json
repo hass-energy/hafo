@@ -1,6 +1,6 @@
 {
   "config": {
-    "flow_title": "{name}",
+    "flow_title": "HAFO Forecast",
     "step": {
       "user": {
         "title": "Create Forecast Helper",
