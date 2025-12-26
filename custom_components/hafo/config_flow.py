@@ -114,13 +114,16 @@ class HafoOptionsFlow(OptionsFlow):
         if entry is None:
             return self.async_abort(reason="entry_not_found")
 
-        current_data = entry.data
+        # Read from options first (previously saved), fall back to data (initial config)
+        current_history_days = entry.options.get(
+            CONF_HISTORY_DAYS, entry.data.get(CONF_HISTORY_DAYS, DEFAULT_HISTORY_DAYS)
+        )
 
         schema = vol.Schema(
             {
                 vol.Optional(
                     CONF_HISTORY_DAYS,
-                    default=current_data.get(CONF_HISTORY_DAYS, DEFAULT_HISTORY_DAYS),
+                    default=current_history_days,
                 ): selector.NumberSelector(
                     selector.NumberSelectorConfig(
                         min=1,
