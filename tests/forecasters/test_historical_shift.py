@@ -188,5 +188,3 @@ async def test_forecaster_generate_forecast_raises_when_no_data(
 def test_forecaster_update_interval() -> None:
     """Forecaster has hourly update interval."""
     assert timedelta(hours=1) == HistoricalShiftForecaster.UPDATE_INTERVAL
-
-
