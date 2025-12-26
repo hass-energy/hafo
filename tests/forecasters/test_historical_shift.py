@@ -223,3 +223,66 @@ async def test_forecaster_generate_forecast_raises_when_no_data(
 def test_forecaster_update_interval() -> None:
     """Forecaster has hourly update interval."""
     assert timedelta(hours=1) == HistoricalShiftForecaster.UPDATE_INTERVAL
+
+
+async def test_forecaster_starts_watching_when_entity_unavailable(
+    hass: HomeAssistant,
+) -> None:
+    """Forecaster starts watching for source entity when it's not available."""
+    hass.config.components.add("recorder")
+    # Note: sensor.test does NOT exist yet
+
+    entry = _create_mock_entry(hass)
+    forecaster = HistoricalShiftForecaster(hass, entry)
+
+    # Initially not watching
+    assert forecaster._unsub_state_change is None
+
+    # Trigger update when entity doesn't exist
+    result = await forecaster._async_update_data()
+
+    # Should return None and start watching
+    assert result is None
+    assert forecaster._unsub_state_change is not None
+
+    # Cleanup
+    forecaster.cleanup()
+    assert forecaster._unsub_state_change is None
+
+
+async def test_forecaster_stops_watching_on_success(
+    hass: HomeAssistant, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Forecaster stops watching after successful update."""
+    hass.config.components.add("recorder")
+    hass.states.async_set("sensor.test", "100.0")
+
+    entry = _create_mock_entry(hass, history_days=7)
+    forecaster = HistoricalShiftForecaster(hass, entry)
+
+    # Simulate that we were watching
+    forecaster.start_watching_source_entity()
+    assert forecaster._unsub_state_change is not None
+
+    tz = dt_util.get_default_time_zone()
+    history_base = datetime(2024, 1, 1, 10, 0, 0, tzinfo=tz)
+    mock_stats: list[dict[str, Any]] = [
+        {"start": history_base, "mean": 100.0},
+    ]
+
+    async def mock_get_stats(
+        _hass: HomeAssistant,
+        _entity_id: str,
+        _start_time: datetime,
+        _end_time: datetime,
+    ) -> list[dict[str, Any]]:
+        return mock_stats
+
+    monkeypatch.setattr(hs, "get_statistics_for_sensor", mock_get_stats)
+
+    # Trigger a successful update
+    result = await forecaster._async_update_data()
+
+    assert result is not None
+    # Should have stopped watching
+    assert forecaster._unsub_state_change is None

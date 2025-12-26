@@ -11,7 +11,8 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
+from homeassistant.core import CALLBACK_TYPE, Event, EventStateChangedData, HomeAssistant, callback
+from homeassistant.helpers.event import async_track_state_change_event
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.util import dt as dt_util
 
@@ -154,10 +155,11 @@ class HistoricalShiftForecaster(DataUpdateCoordinator[ForecastResult | None]):
     This forecaster fetches historical data from the recorder and shifts it
     forward by N days to project past patterns into the future.
 
-    Update interval: Hourly, aligned with recorder hourly statistics.
+    Update interval: Hourly once data is available. If the source sensor is not
+    available at startup, watches for it to become available and refreshes immediately.
     """
 
-    # Update interval: aligned with hourly statistics from the recorder
+    # Normal update interval: aligned with hourly statistics from the recorder
     UPDATE_INTERVAL = timedelta(hours=1)
 
     def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
@@ -174,6 +176,7 @@ class HistoricalShiftForecaster(DataUpdateCoordinator[ForecastResult | None]):
         self._history_days: int = int(
             entry.options.get(CONF_HISTORY_DAYS, entry.data.get(CONF_HISTORY_DAYS, DEFAULT_HISTORY_DAYS))
         )
+        self._unsub_state_change: CALLBACK_TYPE | None = None
 
         super().__init__(
             hass,
@@ -182,6 +185,44 @@ class HistoricalShiftForecaster(DataUpdateCoordinator[ForecastResult | None]):
             update_interval=self.UPDATE_INTERVAL,
             config_entry=entry,
         )
+
+    def start_watching_source_entity(self) -> None:
+        """Start watching the source entity for availability.
+
+        When the source entity becomes available (e.g., after Modbus initializes),
+        triggers an immediate refresh instead of waiting for the next poll.
+        """
+        if self._unsub_state_change is not None:
+            return  # Already watching
+
+        @callback
+        def _async_source_entity_changed(event: Event[EventStateChangedData]) -> None:
+            """Handle source entity state change."""
+            old_state = event.data.get("old_state")
+            new_state = event.data.get("new_state")
+
+            # Trigger refresh when entity becomes available (None -> state)
+            if old_state is None and new_state is not None:
+                _LOGGER.debug(
+                    "Source entity %s became available, triggering forecast refresh",
+                    self._source_entity,
+                )
+                self.hass.async_create_task(self.async_refresh())
+                # Stop watching once entity is available
+                self._stop_watching_source_entity()
+
+        self._unsub_state_change = async_track_state_change_event(
+            self.hass,
+            [self._source_entity],
+            _async_source_entity_changed,
+        )
+        _LOGGER.debug("Watching for source entity %s to become available", self._source_entity)
+
+    def _stop_watching_source_entity(self) -> None:
+        """Stop watching the source entity."""
+        if self._unsub_state_change is not None:
+            self._unsub_state_change()
+            self._unsub_state_change = None
 
     @property
     def source_entity(self) -> str:
@@ -224,10 +265,15 @@ class HistoricalShiftForecaster(DataUpdateCoordinator[ForecastResult | None]):
             # Check if we can generate data for this entity
             if not await self._available():
                 _LOGGER.warning(
-                    "Forecaster not available for entity %s - recorder may not be ready",
+                    "Forecaster not available for entity %s - waiting for source entity to become available",
                     self._source_entity,
                 )
+                # Watch for source entity to become available instead of polling
+                self.start_watching_source_entity()
                 return None
+
+            # Stop watching if we were waiting for the entity
+            self._stop_watching_source_entity()
 
             # Generate the forecast
             result = await self._generate_forecast()
@@ -242,7 +288,6 @@ class HistoricalShiftForecaster(DataUpdateCoordinator[ForecastResult | None]):
 
         except ValueError as err:
             _LOGGER.warning("Failed to generate forecast: %s", err)
-            # Return None instead of raising to allow graceful degradation
             return None
         except Exception as err:
             msg = f"Error generating forecast: {err}"
@@ -289,4 +334,5 @@ class HistoricalShiftForecaster(DataUpdateCoordinator[ForecastResult | None]):
 
     def cleanup(self) -> None:
         """Clean up coordinator resources."""
+        self._stop_watching_source_entity()
         _LOGGER.debug("Cleaning up forecaster for %s", self._source_entity)

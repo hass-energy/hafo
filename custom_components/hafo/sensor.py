@@ -1,6 +1,5 @@
 """Sensor platform for Home Assistant Forecaster."""
 
-from datetime import datetime
 import logging
 from typing import Any
 
@@ -8,13 +7,12 @@ from homeassistant.components.sensor import SensorEntity, SensorStateClass
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
-from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util import dt as dt_util
 
 from .const import ATTR_FORECAST, ATTR_HISTORY_DAYS, ATTR_LAST_UPDATED, ATTR_SOURCE_ENTITY
 from .coordinator import ForecasterCoordinator
-from .forecasters.historical_shift import ForecastPoint, ForecastResult
+from .forecasters.historical_shift import ForecastResult
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -34,7 +32,7 @@ async def async_setup_entry(
     async_add_entities(entities)
 
 
-class HafoForecastSensor(CoordinatorEntity[ForecasterCoordinator], RestoreEntity, SensorEntity):
+class HafoForecastSensor(CoordinatorEntity[ForecasterCoordinator], SensorEntity):
     """Sensor that provides forecast data from historical statistics."""
 
     _attr_state_class = SensorStateClass.MEASUREMENT
@@ -53,53 +51,9 @@ class HafoForecastSensor(CoordinatorEntity[ForecasterCoordinator], RestoreEntity
         self._attr_name = f"{coordinator.entry.title} Forecast"
         self._attr_icon = "mdi:crystal-ball"
 
-        # Restored state from before restart (used until fresh data is fetched)
-        self._restored_result: ForecastResult | None = None
-
         # Copy unit of measurement from source entity if available
         self._source_entity = coordinator.source_entity
         self._update_from_source_entity()
-
-    async def async_added_to_hass(self) -> None:
-        """Restore state when entity is added to hass."""
-        await super().async_added_to_hass()
-
-        # Try to restore previous state
-        if (last_state := await self.async_get_last_state()) is None:
-            return
-
-        # Restore forecast from attributes
-        if (forecast_data := last_state.attributes.get(ATTR_FORECAST)) is None:
-            return
-
-        if (last_updated := last_state.attributes.get(ATTR_LAST_UPDATED)) is None:
-            return
-
-        try:
-            # Parse the forecast data back into ForecastResult
-            forecast_points = [
-                ForecastPoint(
-                    time=datetime.fromisoformat(point["time"]),
-                    value=float(point["value"]),
-                )
-                for point in forecast_data
-                if "time" in point and "value" in point
-            ]
-
-            if forecast_points:
-                self._restored_result = ForecastResult(
-                    forecast=forecast_points,
-                    source_entity=self._source_entity,
-                    history_days=self.coordinator.history_days,
-                    generated_at=datetime.fromisoformat(last_updated),
-                )
-                _LOGGER.debug(
-                    "Restored forecast for %s with %d points from before restart",
-                    self._source_entity,
-                    len(forecast_points),
-                )
-        except (KeyError, ValueError, TypeError) as err:
-            _LOGGER.warning("Failed to restore forecast state: %s", err)
 
     def _update_from_source_entity(self) -> None:
         """Update sensor attributes from the source entity."""
@@ -112,21 +66,9 @@ class HafoForecastSensor(CoordinatorEntity[ForecasterCoordinator], RestoreEntity
                 self._attr_device_class = device_class
 
     @property
-    def _effective_result(self) -> ForecastResult | None:
-        """Return the best available forecast result.
-
-        Uses coordinator data if available, otherwise falls back to restored state.
-        """
-        if self.coordinator.data is not None:
-            # Clear restored data once we have fresh data
-            self._restored_result = None
-            return self.coordinator.data
-        return self._restored_result
-
-    @property
     def native_value(self) -> float | None:  # type: ignore[override]
         """Return the current forecast value (first point in forecast)."""
-        result = self._effective_result
+        result = self.coordinator.data
         if result is None or not result.forecast:
             return None
 
@@ -146,7 +88,7 @@ class HafoForecastSensor(CoordinatorEntity[ForecasterCoordinator], RestoreEntity
     @property
     def extra_state_attributes(self) -> dict[str, Any]:  # type: ignore[override]
         """Return additional state attributes including the full forecast."""
-        result = self._effective_result
+        result = self.coordinator.data
 
         attrs: dict[str, Any] = {
             ATTR_SOURCE_ENTITY: self._source_entity,
