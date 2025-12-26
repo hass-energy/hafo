@@ -129,41 +129,6 @@ def test_forecaster_properties(hass: HomeAssistant) -> None:
     assert forecaster.entry is entry
 
 
-async def test_forecaster_available_when_recorder_loaded_and_sensor_exists(hass: HomeAssistant) -> None:
-    """_available() returns True when recorder is loaded and sensor exists."""
-    hass.config.components.add("recorder")
-    hass.states.async_set("sensor.test", "5.0")
-
-    entry = _create_mock_entry(hass)
-    forecaster = HistoricalShiftForecaster(hass, entry)
-
-    assert await forecaster._available()
-
-
-async def test_forecaster_not_available_when_recorder_missing(
-    hass: HomeAssistant, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """_available() returns False when recorder is not loaded."""
-    monkeypatch.setattr(
-        hass.config.components,
-        "__contains__",
-        lambda component: component != "recorder",
-    )
-    entry = _create_mock_entry(hass)
-    forecaster = HistoricalShiftForecaster(hass, entry)
-
-    assert not await forecaster._available()
-
-
-async def test_forecaster_not_available_when_sensor_missing(hass: HomeAssistant) -> None:
-    """_available() returns False when sensor doesn't exist."""
-    hass.config.components.add("recorder")
-    entry = _create_mock_entry(hass)
-    forecaster = HistoricalShiftForecaster(hass, entry)
-
-    assert not await forecaster._available()
-
-
 async def test_forecaster_generate_forecast_returns_result(
     hass: HomeAssistant, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -223,3 +188,40 @@ async def test_forecaster_generate_forecast_raises_when_no_data(
 def test_forecaster_update_interval() -> None:
     """Forecaster has hourly update interval."""
     assert timedelta(hours=1) == HistoricalShiftForecaster.UPDATE_INTERVAL
+
+
+async def test_forecaster_returns_none_when_recorder_not_loaded(
+    hass: HomeAssistant,
+) -> None:
+    """Forecaster returns None when recorder component is not loaded."""
+    # The recorder component is not added to hass, so it should fail gracefully
+    entry = _create_mock_entry(hass)
+    forecaster = HistoricalShiftForecaster(hass, entry)
+
+    result = await forecaster._async_update_data()
+
+    # Should gracefully return None (will retry on next update interval)
+    assert result is None
+
+
+async def test_forecaster_returns_none_when_no_statistics_exist(
+    hass: HomeAssistant, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Forecaster returns None when entity has no historical statistics."""
+    entry = _create_mock_entry(hass)
+    forecaster = HistoricalShiftForecaster(hass, entry)
+
+    async def mock_get_stats(
+        _hass: HomeAssistant,
+        _entity_id: str,
+        _start_time: datetime,
+        _end_time: datetime,
+    ) -> list[dict[str, Any]]:
+        return []
+
+    monkeypatch.setattr(hs, "get_statistics_for_sensor", mock_get_stats)
+
+    result = await forecaster._async_update_data()
+
+    # Should gracefully return None
+    assert result is None

@@ -198,18 +198,6 @@ class HistoricalShiftForecaster(DataUpdateCoordinator[ForecastResult | None]):
         """Return the config entry."""
         return self._entry
 
-    async def _available(self) -> bool:
-        """Check if we can generate a forecast for the configured sensor.
-
-        Returns:
-            True if the recorder component is available and sensor exists.
-
-        """
-        if "recorder" not in self.hass.config.components:
-            return False
-
-        return self.hass.states.get(self._source_entity) is not None
-
     async def _async_update_data(self) -> ForecastResult | None:
         """Fetch and update forecast data.
 
@@ -221,15 +209,6 @@ class HistoricalShiftForecaster(DataUpdateCoordinator[ForecastResult | None]):
 
         """
         try:
-            # Check if we can generate data for this entity
-            if not await self._available():
-                _LOGGER.warning(
-                    "Forecaster not available for entity %s - recorder may not be ready",
-                    self._source_entity,
-                )
-                return None
-
-            # Generate the forecast
             result = await self._generate_forecast()
 
             _LOGGER.debug(
@@ -242,7 +221,6 @@ class HistoricalShiftForecaster(DataUpdateCoordinator[ForecastResult | None]):
 
         except ValueError as err:
             _LOGGER.warning("Failed to generate forecast: %s", err)
-            # Return None instead of raising to allow graceful degradation
             return None
         except Exception as err:
             msg = f"Error generating forecast: {err}"
