@@ -3,14 +3,21 @@
 import logging
 from typing import Any
 
-from homeassistant.components.sensor import SensorEntity, SensorStateClass
+from homeassistant.components.sensor import SensorDeviceClass, SensorEntity, SensorStateClass
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util import dt as dt_util
 
-from .const import ATTR_FORECAST, ATTR_HISTORY_DAYS, ATTR_LAST_UPDATED, ATTR_SOURCE_ENTITY
+from .const import (
+    ATTR_FORECAST,
+    ATTR_HISTORY_DAYS,
+    ATTR_LAST_UPDATED,
+    ATTR_SOURCE_ENTITY,
+    CONF_SOURCE_DEVICE_CLASS,
+    CONF_SOURCE_UNIT,
+)
 from .coordinator import ForecasterCoordinator
 from .forecasters.historical_shift import ForecastResult
 
@@ -51,19 +58,54 @@ class HafoForecastSensor(CoordinatorEntity[ForecasterCoordinator], SensorEntity)
         self._attr_name = f"{coordinator.entry.title} Forecast"
         self._attr_icon = "mdi:crystal-ball"
 
-        # Copy unit of measurement from source entity if available
         self._source_entity = coordinator.source_entity
+
+        # Load stored unit/device_class from config entry (survives restarts)
+        self._load_stored_source_attributes()
+
+        # Try to update from source entity if available
         self._update_from_source_entity()
 
+    def _load_stored_source_attributes(self) -> None:
+        """Load stored unit and device class from config entry."""
+        entry = self.coordinator.entry
+        if stored_unit := entry.data.get(CONF_SOURCE_UNIT):
+            self._attr_native_unit_of_measurement = stored_unit
+        if stored_device_class := entry.data.get(CONF_SOURCE_DEVICE_CLASS):
+            try:
+                self._attr_device_class = SensorDeviceClass(stored_device_class)
+            except ValueError:
+                _LOGGER.warning("Invalid stored device class: %s", stored_device_class)
+
     def _update_from_source_entity(self) -> None:
-        """Update sensor attributes from the source entity."""
+        """Update sensor attributes from the source entity and persist them."""
         source_state = self.coordinator.hass.states.get(self._source_entity)
-        if source_state:
-            # Copy unit of measurement and device class if available
-            if unit := source_state.attributes.get("unit_of_measurement"):
-                self._attr_native_unit_of_measurement = unit
-            if device_class := source_state.attributes.get("device_class"):
-                self._attr_device_class = device_class
+        if not source_state:
+            return
+
+        unit = source_state.attributes.get("unit_of_measurement")
+        device_class = source_state.attributes.get("device_class")
+
+        # Update attributes if present
+        if unit:
+            self._attr_native_unit_of_measurement = unit
+        if device_class:
+            self._attr_device_class = device_class
+
+        # Check if we need to update the stored values in config entry
+        entry = self.coordinator.entry
+        stored_unit = entry.data.get(CONF_SOURCE_UNIT)
+        stored_device_class = entry.data.get(CONF_SOURCE_DEVICE_CLASS)
+
+        if unit != stored_unit or device_class != stored_device_class:
+            # Update the config entry with new values
+            new_data = {**entry.data}
+            if unit:
+                new_data[CONF_SOURCE_UNIT] = unit
+            if device_class:
+                new_data[CONF_SOURCE_DEVICE_CLASS] = device_class
+
+            self.coordinator.hass.config_entries.async_update_entry(entry, data=new_data)
 
     @property
     def native_value(self) -> float | None:  # type: ignore[override]
