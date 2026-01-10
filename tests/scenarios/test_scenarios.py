@@ -7,9 +7,9 @@ the recorder and verify the forecaster produces correct output.
 from datetime import UTC, datetime, timedelta
 
 from freezegun import freeze_time
-from homeassistant.components.recorder import get_instance
 from homeassistant.components.recorder.statistics import statistics_during_period
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.recorder import get_instance
 from homeassistant.util import dt as dt_util
 import pytest
 
@@ -36,6 +36,9 @@ async def test_forecast_from_fake_statistics(hass: HomeAssistant) -> None:
 
     # Verify the statistics were added
     recorder = get_instance(hass)
+    assert recorder is not None, (
+        "Recorder instance is not initialized; ensure the recorder_mock fixture is set up correctly"
+    )
     stats = await recorder.async_add_executor_job(
         lambda: statistics_during_period(
             hass,
@@ -71,6 +74,9 @@ async def test_historical_shift_with_frozen_time(hass: HomeAssistant) -> None:
 
     # The statistics should now be available for querying
     recorder = get_instance(hass)
+    assert recorder is not None, (
+        "Recorder instance is not initialized; ensure the recorder_mock fixture is set up correctly"
+    )
     stats = await recorder.async_add_executor_job(
         lambda: statistics_during_period(
             hass,
@@ -98,6 +104,11 @@ async def test_empty_statistics(hass: HomeAssistant) -> None:
     # Verify that querying a non-existent statistic returns empty
     now = dt_util.utcnow()
     recorder = get_instance(hass)
+    if recorder is None:
+        pytest.fail(
+            "Recorder instance is not initialized; "
+            "ensure the recorder_mock fixture is configured correctly"
+        )
     stats = await recorder.async_add_executor_job(
         lambda: statistics_during_period(
             hass,
