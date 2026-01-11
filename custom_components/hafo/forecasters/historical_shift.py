@@ -71,14 +71,11 @@ async def get_statistics_for_sensor(
         raise ValueError(msg)
 
     try:
-        # Recorder is an optional after_dependency, so we import inline after checking it's loaded
+        # Recorder is a required dependency, guaranteed to be loaded and initialized
         from homeassistant.components.recorder import get_instance  # noqa: PLC0415
         from homeassistant.components.recorder.statistics import statistics_during_period  # noqa: PLC0415
 
         recorder = get_instance(hass)
-        if recorder is None:
-            msg = "Recorder instance not available"
-            raise ValueError(msg)
     except ImportError:
         msg = "Recorder component not available"
         raise ValueError(msg) from None
