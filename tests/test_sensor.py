@@ -1,5 +1,7 @@
 """Tests for the HAFO sensor platform."""
 
+from unittest.mock import patch
+
 from homeassistant.components.sensor import SensorDeviceClass
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
@@ -151,21 +153,14 @@ async def test_sensor_does_not_update_entry_when_values_unchanged(hass: HomeAssi
         source_device_class="power",
     )
 
-    # Track calls to async_update_entry
-    original_update = hass.config_entries.async_update_entry
-    update_calls: list[MockConfigEntry] = []
+    with patch.object(
+        hass.config_entries, "async_update_entry", wraps=hass.config_entries.async_update_entry
+    ) as mock_update:
+        coordinator = create_forecaster(hass, entry)
+        HafoForecastSensor(coordinator)
 
-    def tracking_update(entry: MockConfigEntry, **kwargs: dict) -> None:
-        update_calls.append(entry)
-        original_update(entry, **kwargs)
-
-    hass.config_entries.async_update_entry = tracking_update  # type: ignore[method-assign]
-
-    coordinator = create_forecaster(hass, entry)
-    HafoForecastSensor(coordinator)
-
-    # Should not have called update since values are the same
-    assert len(update_calls) == 0
+        # Should not have called update since values are the same
+        assert mock_update.call_count == 0
 
 
 async def test_sensor_updates_when_source_becomes_available(hass: HomeAssistant) -> None:
