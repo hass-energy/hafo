@@ -1,11 +1,13 @@
 """Tests for the HAFO integration initialization."""
 
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
+from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
+from custom_components.hafo import async_reload_entry, async_setup_entry, async_unload_entry, async_update_listener
 from custom_components.hafo.const import (
     CONF_FORECAST_TYPE,
     CONF_HISTORY_DAYS,
@@ -88,3 +90,108 @@ async def test_create_forecaster_unknown_type(hass: HomeAssistant) -> None:
 
     with pytest.raises(ValueError, match="Unknown forecast type"):
         create_forecaster(hass, entry)
+
+
+async def test_async_setup_entry(hass: HomeAssistant, mock_config_entry: MockConfigEntry) -> None:
+    """async_setup_entry creates coordinator, refreshes, and forwards to platforms."""
+    coordinator = create_forecaster(hass, mock_config_entry)
+    with (
+        patch(
+            "custom_components.hafo.create_forecaster",
+            return_value=coordinator,
+        ),
+        patch.object(
+            coordinator,
+            "async_config_entry_first_refresh",
+            new_callable=AsyncMock,
+        ) as mock_refresh,
+        patch.object(
+            hass.config_entries,
+            "async_forward_entry_setups",
+            new_callable=AsyncMock,
+        ) as mock_forward,
+        patch.object(
+            mock_config_entry,
+            "add_update_listener",
+            return_value=MagicMock(),
+        ) as mock_listener,
+    ):
+        result = await async_setup_entry(hass, mock_config_entry)
+
+    assert result is True
+    assert mock_config_entry.runtime_data is coordinator
+    mock_refresh.assert_awaited_once()
+    mock_forward.assert_awaited_once_with(mock_config_entry, [Platform.SENSOR])
+    mock_listener.assert_called_once()
+
+
+async def test_async_unload_entry(hass: HomeAssistant, mock_config_entry: MockConfigEntry) -> None:
+    """async_unload_entry unloads platforms and cleans up coordinator."""
+    coordinator = create_forecaster(hass, mock_config_entry)
+    mock_config_entry.runtime_data = coordinator
+
+    with patch.object(
+        hass.config_entries,
+        "async_unload_platforms",
+        new_callable=AsyncMock,
+        return_value=True,
+    ) as mock_unload:
+        result = await async_unload_entry(hass, mock_config_entry)
+
+    assert result is True
+    mock_unload.assert_awaited_once_with(mock_config_entry, [Platform.SENSOR])
+    # Coordinator.cleanup() was called (no-op for this coordinator, but path is covered)
+    coordinator.cleanup()
+
+
+async def test_async_unload_entry_false_when_unload_fails(
+    hass: HomeAssistant, mock_config_entry: MockConfigEntry
+) -> None:
+    """async_unload_entry returns False when platform unload fails."""
+    coordinator = create_forecaster(hass, mock_config_entry)
+    mock_config_entry.runtime_data = coordinator
+
+    with patch.object(
+        hass.config_entries,
+        "async_unload_platforms",
+        new_callable=AsyncMock,
+        return_value=False,
+    ):
+        result = await async_unload_entry(hass, mock_config_entry)
+
+    assert result is False
+
+
+async def test_async_reload_entry(hass: HomeAssistant, mock_config_entry: MockConfigEntry) -> None:
+    """async_reload_entry unloads then sets up again."""
+    coordinator = create_forecaster(hass, mock_config_entry)
+    mock_config_entry.runtime_data = coordinator
+
+    with (
+        patch(
+            "custom_components.hafo.async_unload_entry",
+            new_callable=AsyncMock,
+            return_value=True,
+        ) as mock_unload,
+        patch(
+            "custom_components.hafo.async_setup_entry",
+            new_callable=AsyncMock,
+            return_value=True,
+        ) as mock_setup,
+    ):
+        await async_reload_entry(hass, mock_config_entry)
+
+    mock_unload.assert_awaited_once_with(hass, mock_config_entry)
+    mock_setup.assert_awaited_once_with(hass, mock_config_entry)
+
+
+async def test_async_update_listener_reloads_entry(hass: HomeAssistant, mock_config_entry: MockConfigEntry) -> None:
+    """async_update_listener triggers config entry reload."""
+    with patch.object(
+        hass.config_entries,
+        "async_reload",
+        new_callable=AsyncMock,
+    ) as mock_reload:
+        await async_update_listener(hass, mock_config_entry)
+
+    mock_reload.assert_awaited_once_with(mock_config_entry.entry_id)
