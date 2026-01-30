@@ -9,6 +9,7 @@ from datetime import UTC, datetime, timedelta
 from freezegun import freeze_time
 from homeassistant.components.recorder.statistics import statistics_during_period
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.recorder import get_instance
 from homeassistant.util import dt as dt_util
 import pytest
 
@@ -34,7 +35,8 @@ async def test_forecast_from_fake_statistics(hass: HomeAssistant) -> None:
     await add_fake_statistics(hass, entity_id, fake_stats)
 
     # Verify the statistics were added
-    stats = await hass.async_add_executor_job(
+    recorder = get_instance(hass)
+    stats = await recorder.async_add_executor_job(
         lambda: statistics_during_period(
             hass,
             start_time,
@@ -68,7 +70,8 @@ async def test_historical_shift_with_frozen_time(hass: HomeAssistant) -> None:
     await add_fake_statistics(hass, entity_id, fake_stats)
 
     # The statistics should now be available for querying
-    stats = await hass.async_add_executor_job(
+    recorder = get_instance(hass)
+    stats = await recorder.async_add_executor_job(
         lambda: statistics_during_period(
             hass,
             base_time,
@@ -94,7 +97,8 @@ async def test_empty_statistics(hass: HomeAssistant) -> None:
 
     # Verify that querying a non-existent statistic returns empty
     now = dt_util.utcnow()
-    stats = await hass.async_add_executor_job(
+    recorder = get_instance(hass)
+    stats = await recorder.async_add_executor_job(
         lambda: statistics_during_period(
             hass,
             now - timedelta(days=7),
