@@ -3,9 +3,10 @@
 Update the project version number to `$VERSION`.
 
 1. Update `pyproject.toml`:
-   ```toml
-   version = "$VERSION"
-   ```
+
+    ```toml
+    version = "$VERSION"
+    ```
 
 2. Update `custom_components/amber_express/manifest.json`:
    ```json
