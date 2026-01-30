@@ -206,9 +206,7 @@ class HistoricalShiftForecaster(DataUpdateCoordinator[ForecastResult | None]):
         end_time = now
 
         # Fetch historical statistics
-        statistics = await get_statistics_for_sensor(
-            self.hass, self._source_entity, start_time, end_time
-        )
+        statistics = await get_statistics_for_sensor(self.hass, self._source_entity, start_time, end_time)
 
         if not statistics:
             msg = f"No historical data available for {self._source_entity}"

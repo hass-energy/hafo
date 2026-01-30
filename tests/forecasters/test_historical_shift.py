@@ -206,9 +206,7 @@ def test_forecaster_update_interval() -> None:
     assert timedelta(hours=1) == HistoricalShiftForecaster.UPDATE_INTERVAL
 
 
-async def test_forecaster_raises_when_no_statistics_exist(
-    hass: HomeAssistant, monkeypatch: pytest.MonkeyPatch
-) -> None:
+async def test_forecaster_raises_when_no_statistics_exist(hass: HomeAssistant, monkeypatch: pytest.MonkeyPatch) -> None:
     """Forecaster raises ValueError when entity has no historical statistics."""
     entry = _create_mock_entry(hass)
     forecaster = HistoricalShiftForecaster(hass, entry)
