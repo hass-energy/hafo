@@ -1,10 +1,9 @@
 {
   "domain": "hafo",
   "name": "HAFO Forecast",
-  "after_dependencies": ["recorder"],
   "codeowners": ["@TrentHouliston"],
   "config_flow": true,
-  "dependencies": [],
+  "dependencies": ["recorder"],
   "documentation": "https://github.com/hass-energy/hafo",
   "integration_type": "helper",
   "iot_class": "calculated",
