@@ -8,17 +8,16 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
+from homeassistant.components.recorder.statistics import StatisticsRow, statistics_during_period
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.recorder import get_instance
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.util import dt as dt_util
 
 from custom_components.hafo.const import CONF_HISTORY_DAYS, CONF_SOURCE_ENTITY, DEFAULT_HISTORY_DAYS, DOMAIN
-
-if TYPE_CHECKING:
-    from homeassistant.components.recorder.statistics import StatisticsRow
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -66,36 +65,19 @@ async def get_statistics_for_sensor(
         ValueError: If the recorder is not available or not set up.
 
     """
-    if "recorder" not in hass.config.components:
-        msg = "Recorder component not loaded"
-        raise ValueError(msg)
 
-    try:
-        # Recorder is a required dependency, guaranteed to be loaded and initialized
-        from homeassistant.components.recorder import get_instance  # noqa: PLC0415
-        from homeassistant.components.recorder.statistics import statistics_during_period  # noqa: PLC0415
-
-        recorder = get_instance(hass)
-    except ImportError:
-        msg = "Recorder component not available"
-        raise ValueError(msg) from None
-
-    try:
-        statistics: dict[str, list[StatisticsRow]] = await recorder.async_add_executor_job(
-            lambda: statistics_during_period(
-                hass,
-                start_time,
-                end_time,
-                {entity_id},
-                "hour",
-                None,
-                {"mean"},
-            )
+    recorder = get_instance(hass)
+    statistics: dict[str, list[StatisticsRow]] = await recorder.async_add_executor_job(
+        lambda: statistics_during_period(
+            hass,
+            start_time,
+            end_time,
+            {entity_id},
+            "hour",
+            None,
+            {"mean"},
         )
-    except Exception as e:
-        msg = f"Failed to fetch statistics: {e}"
-        raise ValueError(msg) from e
-
+    )
     return statistics.get(entity_id, [])
 
 
