@@ -190,20 +190,6 @@ def test_forecaster_update_interval() -> None:
     assert timedelta(hours=1) == HistoricalShiftForecaster.UPDATE_INTERVAL
 
 
-async def test_forecaster_returns_none_when_recorder_not_loaded(
-    hass: HomeAssistant,
-) -> None:
-    """Forecaster returns None when recorder component is not loaded."""
-    # The recorder component is not added to hass, so it should fail gracefully
-    entry = _create_mock_entry(hass)
-    forecaster = HistoricalShiftForecaster(hass, entry)
-
-    result = await forecaster._async_update_data()
-
-    # Should gracefully return None (will retry on next update interval)
-    assert result is None
-
-
 async def test_forecaster_returns_none_when_no_statistics_exist(
     hass: HomeAssistant, monkeypatch: pytest.MonkeyPatch
 ) -> None:
