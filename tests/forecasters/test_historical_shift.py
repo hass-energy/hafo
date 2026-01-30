@@ -206,10 +206,10 @@ def test_forecaster_update_interval() -> None:
     assert timedelta(hours=1) == HistoricalShiftForecaster.UPDATE_INTERVAL
 
 
-async def test_forecaster_returns_none_when_no_statistics_exist(
+async def test_forecaster_raises_when_no_statistics_exist(
     hass: HomeAssistant, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Forecaster returns None when entity has no historical statistics."""
+    """Forecaster raises ValueError when entity has no historical statistics."""
     entry = _create_mock_entry(hass)
     forecaster = HistoricalShiftForecaster(hass, entry)
 
@@ -223,10 +223,8 @@ async def test_forecaster_returns_none_when_no_statistics_exist(
 
     monkeypatch.setattr(hs, "get_statistics_for_sensor", mock_get_stats)
 
-    result = await forecaster._async_update_data()
-
-    # Should gracefully return None
-    assert result is None
+    with pytest.raises(ValueError, match="No historical data available"):
+        await forecaster._async_update_data()
 
 
 async def test_forecaster_async_update_data_returns_result(
@@ -260,10 +258,10 @@ async def test_forecaster_async_update_data_returns_result(
     assert len(result.forecast) == 2
 
 
-async def test_forecaster_async_update_data_returns_none_on_value_error(
+async def test_forecaster_async_update_data_propagates_value_error(
     hass: HomeAssistant, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """_async_update_data() returns None when get_statistics raises ValueError."""
+    """_async_update_data() propagates ValueError when get_statistics raises."""
     entry = _create_mock_entry(hass)
     forecaster = HistoricalShiftForecaster(hass, entry)
 
@@ -278,9 +276,8 @@ async def test_forecaster_async_update_data_returns_none_on_value_error(
 
     monkeypatch.setattr(hs, "get_statistics_for_sensor", mock_get_stats_raises)
 
-    result = await forecaster._async_update_data()
-
-    assert result is None
+    with pytest.raises(ValueError, match="Recorder not available"):
+        await forecaster._async_update_data()
 
 
 async def test_forecaster_generate_forecast_raises_when_forecast_empty(

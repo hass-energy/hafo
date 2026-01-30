@@ -14,7 +14,7 @@ from homeassistant.components.recorder.statistics import StatisticsRow, statisti
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.recorder import get_instance
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.util import dt as dt_util
 
 from custom_components.hafo.const import CONF_HISTORY_DAYS, CONF_SOURCE_ENTITY, DEFAULT_HISTORY_DAYS, DOMAIN
@@ -61,11 +61,7 @@ async def get_statistics_for_sensor(
     Returns:
         List of statistics rows with 'start' and 'mean' fields.
 
-    Raises:
-        ValueError: If the recorder is not available or not set up.
-
     """
-
     recorder = get_instance(hass)
     statistics: dict[str, list[StatisticsRow]] = await recorder.async_add_executor_job(
         lambda: statistics_during_period(
@@ -178,33 +174,22 @@ class HistoricalShiftForecaster(DataUpdateCoordinator[ForecastResult | None]):
         """Return the config entry."""
         return self._entry
 
-    async def _async_update_data(self) -> ForecastResult | None:
+    async def _async_update_data(self) -> ForecastResult:
         """Fetch and update forecast data.
 
         Returns:
-            ForecastResult with the latest forecast, or None if unavailable.
-
-        Raises:
-            UpdateFailed: If the forecast cannot be generated.
+            ForecastResult with the latest forecast.
 
         """
-        try:
-            result = await self._generate_forecast()
+        result = await self._generate_forecast()
 
-            _LOGGER.debug(
-                "Generated forecast for %s with %d points",
-                self._source_entity,
-                len(result.forecast),
-            )
+        _LOGGER.debug(
+            "Generated forecast for %s with %d points",
+            self._source_entity,
+            len(result.forecast),
+        )
 
-            return result
-
-        except ValueError as err:
-            _LOGGER.warning("Failed to generate forecast: %s", err)
-            return None
-        except Exception as err:
-            msg = f"Error generating forecast: {err}"
-            raise UpdateFailed(msg) from err
+        return result
 
     async def _generate_forecast(self) -> ForecastResult:
         """Generate a forecast by shifting historical data forward.
@@ -221,11 +206,9 @@ class HistoricalShiftForecaster(DataUpdateCoordinator[ForecastResult | None]):
         end_time = now
 
         # Fetch historical statistics
-        try:
-            statistics = await get_statistics_for_sensor(self.hass, self._source_entity, start_time, end_time)
-        except ValueError:
-            _LOGGER.warning("Failed to get statistics for %s", self._source_entity)
-            raise
+        statistics = await get_statistics_for_sensor(
+            self.hass, self._source_entity, start_time, end_time
+        )
 
         if not statistics:
             msg = f"No historical data available for {self._source_entity}"
